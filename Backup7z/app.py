@@ -83,14 +83,12 @@ class BackupApp(QWidget):
         layout.addWidget(self.progress)
 
         # Actions
-        self.backupButton=QCheckBox("🚀 Iniciar backup ahora")
         self.backupButton = QPushButton("🚀 Iniciar backup ahora")
         self.backupButton.clicked.connect(self.start_backup)
         layout.addWidget(self.backupButton)
 
         self.setLayout(layout)
 
-    # En el método setup_styles() de main.py
     def setup_styles(self):
         self.setStyleSheet("""
             QWidget {
