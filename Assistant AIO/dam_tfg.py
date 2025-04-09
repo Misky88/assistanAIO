@@ -315,6 +315,8 @@ class ApplicationsUI(QWidget):
         super().__init__()
         self.setup_ui()
 
+        # print("Aplicaciones UI inicializada.")
+     
     def setup_ui(self):
         layout = QVBoxLayout()
 
