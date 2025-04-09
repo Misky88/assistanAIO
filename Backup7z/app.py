@@ -4,11 +4,10 @@ import os
 import logging
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel,
-    QCheckBox, QComboBox, QLineEdit, QMessageBox, QGroupBox, QListWidget,
-    QProgressBar, QTabWidget
+    QCheckBox, QComboBox, QLineEdit, QMessageBox, QListWidget,
+    QProgressBar, QTabWidget, QHBoxLayout
 )
 from PyQt6.QtGui import QIcon
-from PyQt6.QtCore import Qt
 from scheduler import schedule_backup
 from backup_thread import BackupThread
 
@@ -40,6 +39,35 @@ class BackupApp(QWidget):
         tab_widget = QTabWidget()
         layout.addWidget(tab_widget)
 
+        # New "Nombre de la Copia" tab
+        name_tab = QWidget()
+        name_layout = QVBoxLayout()
+
+        # Campo para el nombre del archivo comprimido
+        self.outputNameField = QLineEdit()
+        self.outputNameField.setPlaceholderText("Nombre del archivo comprimido (sin extensión)")
+        self.outputNameField.textChanged.connect(self.update_preview)
+        name_layout.addWidget(QLabel("Nombre de la Copia:"))
+        name_layout.addWidget(self.outputNameField)
+
+        # Vista previa del nombre completo del archivo
+        self.previewLabel = QLabel("Vista previa: backup.7z")
+        name_layout.addWidget(self.previewLabel)
+
+        # Campo para la descripción del backup
+        self.descriptionField = QLineEdit()
+        self.descriptionField.setPlaceholderText("Descripción del backup (opcional)")
+        name_layout.addWidget(QLabel("Descripción:"))
+        name_layout.addWidget(self.descriptionField)
+
+        # Botón para restablecer valores
+        btn_reset = QPushButton("🔄 Restablecer")
+        btn_reset.clicked.connect(self.reset_name_tab)
+        name_layout.addWidget(btn_reset)
+
+        name_tab.setLayout(name_layout)
+        tab_widget.addTab(name_tab, "Nombre de la Copia")
+
         # File selection tab
         file_tab = QWidget()
         file_layout = QVBoxLayout()
@@ -47,9 +75,27 @@ class BackupApp(QWidget):
         self.file_list.setMinimumHeight(100)
         file_layout.addWidget(self.file_list)
         
-        btn_add = QPushButton("➕ Agregar archivos")
-        btn_add.clicked.connect(self.select_files)
-        file_layout.addWidget(btn_add)
+        # Layout horizontal para los botones
+        button_layout = QHBoxLayout()
+
+        # Botón para agregar archivos
+        btn_add_files = QPushButton("➕ Agregar archivos")
+        btn_add_files.clicked.connect(self.select_files)
+        button_layout.addWidget(btn_add_files)
+
+        # Botón para agregar carpetas
+        btn_add_folders = QPushButton("📂 Agregar carpetas")
+        btn_add_folders.clicked.connect(self.select_folders)
+        button_layout.addWidget(btn_add_folders)
+
+        # Botón para eliminar elementos seleccionados
+        btn_remove_selected = QPushButton("❌ Eliminar seleccionado")
+        btn_remove_selected.clicked.connect(self.remove_selected_item)
+        button_layout.addWidget(btn_remove_selected)
+
+        # Añadir el layout horizontal al layout principal
+        file_layout.addLayout(button_layout)
+
         file_tab.setLayout(file_layout)
         tab_widget.addTab(file_tab, "Archivos a respaldar")
 
@@ -152,14 +198,25 @@ class BackupApp(QWidget):
         """)
 
     def select_files(self):
+        """Permite al usuario seleccionar archivos para la copia de seguridad."""
         files, _ = QFileDialog.getOpenFileNames(
             self, "Seleccionar Archivos", "", "Todos los archivos (*)"
         )
         if files:
-            self.files = files
-            self.file_list.clear()
-            self.file_list.addItems([os.path.basename(f) for f in files])
-            self.progress.setValue(0)
+            self.files.extend(files)
+            self.update_file_list()
+
+    def select_folders(self):
+        """Permite al usuario seleccionar carpetas para la copia de seguridad."""
+        folder = QFileDialog.getExistingDirectory(self, "Seleccionar Carpeta")
+        if folder:
+            self.files.append(folder)
+            self.update_file_list()
+
+    def update_file_list(self):
+        """Actualiza la lista de archivos y carpetas seleccionados en la interfaz."""
+        self.file_list.clear()
+        self.file_list.addItems([os.path.basename(f) for f in self.files])
 
     def start_backup(self):
         if not self.files:
@@ -171,12 +228,18 @@ class BackupApp(QWidget):
             QMessageBox.warning(self, "Error", "La contraseña debe tener al menos 8 caracteres.")
             return
 
+        # Obtener el nombre del archivo comprimido
+        output_name = self.outputNameField.text().strip()
+        if not output_name:
+            QMessageBox.warning(self, "Error", "Debe especificar un nombre para el archivo comprimido.")
+            return
+
         frequency = self.scheduleCombo.currentText().split(" ")[0]
         
         self.progress.setVisible(True)
         self.backupButton.setEnabled(False)
 
-        self.thread = BackupThread(self.files, password)
+        self.thread = BackupThread(self.files, password, output_name)
         self.thread.progress.connect(self.update_progress)
         self.thread.finished.connect(self.backup_finished)
         self.thread.start()
@@ -194,6 +257,32 @@ class BackupApp(QWidget):
             schedule_backup(frequency, self.files, self.passwordField.text() or None)
         else:
             QMessageBox.critical(self, "Error", message)
+
+    def update_preview(self):
+        """Actualiza la vista previa del nombre completo del archivo comprimido."""
+        name = self.outputNameField.text().strip()
+        if not name:
+            name = "backup"
+        self.previewLabel.setText(f"Vista previa: {name}.7z")
+
+    def reset_name_tab(self):
+        """Restablece los valores de los campos en la pestaña 'Nombre de la Copia'."""
+        self.outputNameField.clear()
+        self.descriptionField.clear()
+        self.update_preview()
+
+    def remove_selected_item(self):
+        """Elimina el elemento seleccionado de la lista de archivos y carpetas."""
+        selected_item = self.file_list.currentItem()
+        if selected_item:
+            item_text = selected_item.text()
+            # Buscar y eliminar el elemento de la lista interna `self.files`
+            for file in self.files:
+                if os.path.basename(file) == item_text:
+                    self.files.remove(file)
+                    break
+            # Actualizar la lista visible
+            self.update_file_list()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

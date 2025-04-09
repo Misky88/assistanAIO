@@ -34,11 +34,15 @@ def upload_to_backblaze(file_path: str):
     except Exception as e:
         raise Exception(f"Error en subida a B2: {str(e)}")
 
-def compress_and_upload(files: List[str], password: str = None) -> str:
+def compress_and_upload(files: List[str], password: str = None, output_name: str = "backup") -> str:
     """Ejecuta todo el proceso de backup."""
-    output_path = "backup.7z"
+    # Asegurarse de que el nombre del archivo tenga la extensión .7z
+    if not output_name.endswith(".7z"):
+        output_name += ".7z"
+    
+    output_path = output_name
     compress_files(output_path, files, password)
     upload_to_backblaze(output_path)
     os.remove(output_path)  # Limpiar archivo local
-    return "Backup completado exitosamente"
+    return f"Backup completado exitosamente: {output_name}"
 
