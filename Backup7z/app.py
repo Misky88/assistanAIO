@@ -32,7 +32,8 @@ class BackupApp(QWidget):
     def setup_ui(self):
         self.setWindowTitle("🛡 Backup Tool Pro")
         self.setWindowIcon(QIcon('icon.png'))
-        self.setMinimumSize(600, 500)
+        self.setMinimumSize(800, 500)
+        self.setMaximumSize(800, 500)
 
         layout = QVBoxLayout()
         layout.setContentsMargins(20, 20, 20, 20)
@@ -306,7 +307,7 @@ class BackupApp(QWidget):
         self.setStyleSheet("""
             QWidget {
                 background: #2d2d2d;
-                color: #e0e0e0;
+                color: #e0e0e0; /* Color claro para el texto */
                 font-family: 'Segoe UI', Arial;
                 font-size: 14px;
             }
@@ -338,20 +339,20 @@ class BackupApp(QWidget):
                 border: 1px solid #4d4d4d;
                 border-radius: 4px;
                 padding: 8px;
-                color: #e0e0e0;
+                color: #e0e0e0; /* Color claro para el texto */
             }
             QListWidget {
                 background: #3d3d3d;
                 border: 1px solid #4d4d4d;
                 border-radius: 4px;
-                color: #e0e0e0;
+                color: #e0e0e0; /* Color claro para el texto */
             }
             QProgressBar {
                 background: #3d3d3d;
                 border: 1px solid #4d4d4d;
                 border-radius: 4px;
                 text-align: center;
-                color: #e0e0e0;
+                color: #e0e0e0; /* Color claro para el texto */
             }
             QProgressBar::chunk {
                 background: #0078d7;
@@ -360,7 +361,17 @@ class BackupApp(QWidget):
             }
             QCheckBox {
                 spacing: 8px;
-                color: #000000;
+                color: #e0e0e0; /* Color claro para el texto */
+            }
+            QLabel {
+                color: #e0e0e0; /* Color claro para el texto */
+            }
+            QComboBox {
+                background: #3d3d3d;
+                border: 1px solid #4d4d4d;
+                border-radius: 4px;
+                padding: 5px;
+                color: #e0e0e0; /* Color claro para el texto */
             }
         """)
 
