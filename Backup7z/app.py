@@ -56,14 +56,21 @@ class BackupApp(QWidget):
         self.previewLabel = QLabel("Vista previa: backup.7z")
         name_layout.addWidget(self.previewLabel)
 
-        # Campo para la descripción del backup
+        # Campo para la descripción del backup (ampliado)
         self.descriptionField = QLineEdit()
         self.descriptionField.setPlaceholderText("Descripción del backup (opcional)")
+        self.descriptionField.setMinimumHeight(50)  # Ampliar el tamaño del campo
         name_layout.addWidget(QLabel("Descripción:"))
         name_layout.addWidget(self.descriptionField)
 
+        # Nuevo apartado: Tipo de Respaldo
+        self.backupTypeCombo = QComboBox()
+        self.backupTypeCombo.addItems(["Respaldo Completo", "Respaldo Incremental"])
+        name_layout.addWidget(QLabel("Tipo de Respaldo:"))
+        name_layout.addWidget(self.backupTypeCombo)
+
         # Botón para restablecer valores
-        btn_reset = QPushButton("🔄 Borrar")
+        btn_reset = QPushButton("🔄 Restablecer")
         btn_reset.clicked.connect(self.reset_name_tab)
         name_layout.addWidget(btn_reset)
 
@@ -210,20 +217,21 @@ class BackupApp(QWidget):
         schedule_layout.addWidget(QLabel("Tipo de horario:"))
         schedule_layout.addWidget(self.scheduleTypeCombo)
 
-        # Selección de días de la semana
-        self.weekDaysCheckBox = QCheckBox("Seleccionar días de la semana")
-        self.weekDaysCheckBox.setChecked(False)
-        schedule_layout.addWidget(self.weekDaysCheckBox)
+        # Selección de días de la semana (ordenados horizontalmente)
+        week_days_layout = QHBoxLayout()
+        week_days_layout.addWidget(QLabel("Días de la semana:"))
 
-        self.weekDaysCombo = QComboBox()
-        self.weekDaysCombo.addItems([
-            "Nada seleccionado", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"
-        ])
-        schedule_layout.addWidget(QLabel("Días de la semana:"))
-        schedule_layout.addWidget(self.weekDaysCombo)
+        self.weekDaysCheckBoxes = []
+        week_days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+        for day in week_days:
+            checkbox = QCheckBox(day)
+            self.weekDaysCheckBoxes.append(checkbox)
+            week_days_layout.addWidget(checkbox)
 
-        # Grupo de CheckBoxes para "En el día"
-        day_position_layout = QVBoxLayout()
+        schedule_layout.addLayout(week_days_layout)
+
+        # Grupo de CheckBoxes para "En el día" (ordenados horizontalmente)
+        day_position_layout = QHBoxLayout()
         day_position_layout.addWidget(QLabel("En el día:"))
 
         self.dayPositionCheckBoxes = []
@@ -258,29 +266,6 @@ class BackupApp(QWidget):
         date_options_layout.addWidget(self.monthCombo)
 
         schedule_layout.addLayout(date_options_layout)
-
-        # Temporizador
-        timer_layout = QHBoxLayout()
-
-        self.timerSpinBox = QComboBox()
-        self.timerSpinBox.addItems(["0", "5", "10", "15", "30", "60"])  # Ejemplo de intervalos en minutos
-        timer_layout.addWidget(QLabel("Temporizador (minutos):"))
-        timer_layout.addWidget(self.timerSpinBox)
-
-        # Corrección en la configuración de límites de tiempo
-        self.lowerLimitTime = QDateTimeEdit()
-        self.lowerLimitTime.setDisplayFormat("HH:mm")
-        self.lowerLimitTime.setTime(QTime(0, 0))  # Establecer límite inferior como 00:00
-        timer_layout.addWidget(QLabel("Límite inferior:"))
-        timer_layout.addWidget(self.lowerLimitTime)
-
-        self.upperLimitTime = QDateTimeEdit()
-        self.upperLimitTime.setDisplayFormat("HH:mm")
-        self.upperLimitTime.setTime(QTime(23, 59))  # Establecer límite superior como 23:59
-        timer_layout.addWidget(QLabel("Límite superior:"))
-        timer_layout.addWidget(self.upperLimitTime)
-
-        schedule_layout.addLayout(timer_layout)
 
         # Botones para exportar/importar programación
         export_import_layout = QHBoxLayout()
@@ -475,6 +460,7 @@ class BackupApp(QWidget):
         """Restablece los valores de los campos en la pestaña 'Nombre de la Copia'."""
         self.outputNameField.clear()
         self.descriptionField.clear()
+        self.backupTypeCombo.setCurrentIndex(0)  # Seleccionar "Respaldo Completo" por defecto
         self.update_preview()
 
     def remove_selected_item(self):
