@@ -6,9 +6,6 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QAction
 
-
-
-
 COMMANDS = {
     "MSINFO32": "Información del sistema",
     "WINVER": "Versión de Windows",
