@@ -8,10 +8,10 @@ from PyQt6.QtWidgets import (
     QCheckBox, QComboBox, QLineEdit, QMessageBox, QListWidget,
     QProgressBar, QTabWidget, QHBoxLayout, QDateTimeEdit
 )
-from PyQt6.QtCore import QDateTime, QTime
+from PyQt6.QtCore import QDateTime
 from PyQt6.QtGui import QIcon
-from scheduler import schedule_backup
-from backup_thread import BackupThread
+# from scheduler import schedule_backup
+# from backup_thread import BackupThread
 
 
 # Configurar logging
