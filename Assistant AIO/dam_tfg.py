@@ -2,12 +2,11 @@ import sys
 import platform
 import psutil 
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, QWidget,
-                             QVBoxLayout, QHBoxLayout, QLabel, QGridLayout, 
-                             QFrame, QStackedWidget, QTabWidget, QLineEdit, QListWidget)
+                             QVBoxLayout, QHBoxLayout, QLabel, QFrame, QStackedWidget, QTabWidget, QLineEdit, QListWidget)
 from PyQt6.QtGui import QIcon, QFont
 from PyQt6.QtCore import QSize, Qt, QTimer
-from comandowin import ComandaWin # Importar la clase ComandaWin
-from chocolatey import ChocolateyUI # Importar la clase ChocolateyUI
+from chocolatey import ChocolateyUI
+
 import subprocess
 
 
@@ -17,6 +16,9 @@ class SystemInfoApp(QMainWindow):
         self.setWindowTitle("Assistan AIO")
         self.setGeometry(100, 100, 800, 600)
         self.setMinimumSize(800, 600)
+
+        # Aplicar estilos
+        self.setStyleSheet(self.get_styles())
         
         # Configuración principal de la UI
         self.central_widget = QWidget()
@@ -35,6 +37,99 @@ class SystemInfoApp(QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_realtime_stats)
         self.timer.start(400)  # Actualizar cada segundo
+    
+    def get_styles(self):
+        return """
+        QWidget {
+            background-color: #f0f3f5;
+            font-family: 'Segoe UI';
+        }
+        QLabel {
+            font-size: 16px;
+            color: #34495e;
+        }
+        QPushButton {
+            background-color: #2980b9;
+            color: white;
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background-color: #3498db;
+        }
+        QPushButton:pressed {
+            background-color: #1d6fa5;
+        }
+        QLineEdit {
+            padding: 6px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: white;
+            color: #34495e;
+        }
+        QListWidget {
+            background-color: white;
+            border: 1px solid #dcdcdc;
+            font-size: 14px;
+            color: #34495e;
+        }
+        QTabWidget::pane {
+            border: 0px solid #ccc;
+            top: -1px;
+        }
+        QTabBar::tab {
+            background: #ecf0f1;
+            color: #34495e;
+            padding: 10px 20px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            font-weight: 500;
+        }
+        QTabBar::tab:selected {
+            background: #f0f3f5;
+            color: #2980b9;
+            font-weight: bold;
+            border: 2px solid #2980b9;
+            border-bottom: none;
+        }
+        QTabBar::tab:hover {
+            background: #d0e7f9;
+        }
+        QProgressBar {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: center;
+            color: #34495e;
+            background-color: #ecf0f1;
+        }
+        QProgressBar::chunk {
+            background-color: #2980b9;
+            width: 10px;
+            border-radius: 5px;
+        }
+        QComboBox {
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 5px;
+            font-size: 14px;
+            color: #34495e;
+        }
+        QComboBox QAbstractItemView {
+            background-color: white;
+            selection-background-color: #d0e7f9;
+            selection-color: #000000;
+            border: 0;
+        }
+        QCheckBox {
+            spacing: 8px;
+            font-size: 14px;
+            color: #34495e;
+        }
+        """
 
     def setup_sidebar(self):
         """Configura la barra lateral con estilos y botones"""
@@ -148,22 +243,24 @@ class SystemInfoApp(QMainWindow):
         """Configura el área de contenido principal"""
         self.stacked_widget = QStackedWidget()
         self.main_layout.addWidget(self.stacked_widget)
-        
-        # Página de información del sistema
+
+    # Página de información del sistema
         self.system_info_page = QWidget()
         self.stacked_widget.addWidget(self.system_info_page)
-        
-        # Página de Comandos Windows
-        self.comanda_win_page = ComandaWin()
+
+    # Página de Comandos Windows
+        self.comanda_win_page = QWidget()  # Placeholder for Comandowin
+        # Replace QWidget with Comandowin() once the class is defined or imported
         self.stacked_widget.addWidget(self.comanda_win_page)
 
-        # Página de Chocolatey
+    # Página de Chocolatey (Nueva gestión de aplicaciones)
         self.chocolatey_page = ChocolateyUI()
         self.stacked_widget.addWidget(self.chocolatey_page)
 
-        # Página de Aplicaciones
-        self.applications_page = ApplicationsUI()
-        self.stacked_widget.addWidget(self.applications_page)
+    # Página de Backups (opcional, si quieres integrarlo más adelante)
+    # self.backup_page = BackupUI() 
+    # self.stacked_widget.addWidget(self.backup_page)
+
 
     def load_system_info(self):
         """Carga y procesa la información del sistema"""
@@ -308,7 +405,6 @@ class SystemInfoApp(QMainWindow):
         self.cpu_usage.setText(f"CPU: {psutil.cpu_percent()}%")
         mem = psutil.virtual_memory()
         self.mem_usage.setText(f"RAM: {mem.percent}%")
-
 
 class ApplicationsUI(QWidget):
     def __init__(self):

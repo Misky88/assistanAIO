@@ -4,31 +4,40 @@ import re
 import os
 import ctypes
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
+    QApplication, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
     QLineEdit, QListWidget, QTextEdit, QFileDialog, QWidget, QTabWidget, QListWidgetItem,
     QFrame, QSizePolicy, QSpacerItem, QComboBox, QDialog, QVBoxLayout, QLabel, QDialog, 
     QVBoxLayout, QLabel, QPushButton, QTextEdit, QMessageBox,
 )
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QFont, QGuiApplication
-from PyQt6.QtWidgets import QPlainTextEdit
-
 # DEPENDENCIAS NECESARIAS PARA LA OPCION DE INSTALAR CHOCOLATEY AUTOMATICAMENTE
-# from PyQt6.QtWidgets import QProgressBar
-# from PyQt6.QtCore import QThread, pyqtSignal
-# from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QProgressBar
+from PyQt6.QtCore import QThread, pyqtSignal
+from PyQt6.QtGui import QIcon
 
+from PyQt6.QtWidgets import QMainWindow
 
-class PackageApp(QMainWindow):
+class ChocolateyUI(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Package App Manager")
-        self.setGeometry(100, 100, 700, 500)
-        self.setStyleSheet(self.get_styles())
-        self.app_dict = {}
         self.group_dict = {}
         self.package_manager = 'winget'
         self.setup_ui()
+
+
+
+# class ChocolateyUI(QWidget):
+
+#     def __init__(self):
+#         super().__init__()
+#         self.setWindowTitle("Package App Manager")
+#         self.setGeometry(100, 100, 700, 500)
+#         self.setStyleSheet(self.get_styles())
+#         self.app_dict = {}
+#         self.group_dict = {}
+#         self.package_manager = 'winget'
+#         self.setup_ui()
 
     def is_running_as_admin(self):
         """Devuelve True si el programa se ejecuta como Administrador"""
@@ -45,6 +54,7 @@ class PackageApp(QMainWindow):
         }
         QLabel {
             font-size: 16px;
+            color: #34495e;
         }
         QPushButton {
             background-color: #2980b9;
@@ -52,29 +62,89 @@ class PackageApp(QMainWindow):
             padding: 8px 16px;
             font-size: 14px;
             border-radius: 5px;
+            font-weight: bold;
         }
         QPushButton:hover {
             background-color: #3498db;
+        }
+        QPushButton:pressed {
+            background-color: #1d6fa5;
         }
         QLineEdit {
             padding: 6px;
             font-size: 14px;
             border: 1px solid #ccc;
             border-radius: 4px;
+            background-color: white;
+            color: #34495e;
         }
         QListWidget {
             background-color: white;
             border: 1px solid #dcdcdc;
             font-size: 14px;
+            color: #34495e;
         }
         QTextEdit {
             background-color: #ffffff;
             font-size: 13px;
             border: 1px solid #ccc;
             padding: 6px;
+            color: #34495e;
+        }
+        QTabWidget::pane {
+            border: 0px solid #ccc;
+            top: -1px;
+        }
+        QTabBar::tab {
+            background: #ecf0f1;
+            color: #34495e;
+            padding: 10px 20px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            font-weight: 500;
+        }
+        QTabBar::tab:selected {
+            background: #f0f3f5;
+            color: #2980b9;
+            font-weight: bold;
+            border: 2px solid #2980b9;
+            border-bottom: none;
+        }
+        QTabBar::tab:hover {
+            background: #d0e7f9;
+        }
+        QProgressBar {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: center;
+            color: #34495e;
+            background-color: #ecf0f1;
+        }
+        QProgressBar::chunk {
+            background-color: #2980b9;
+            width: 10px;
+            border-radius: 5px;
+        }
+        QComboBox {
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 5px;
+            font-size: 14px;
+            color: #34495e;
+        }
+        QComboBox QAbstractItemView {
+            background-color: white;
+            selection-background-color: #d0e7f9;
+            selection-color: #000000;
+            border: 0;
+        }
+        QCheckBox {
+            spacing: 8px;
+            font-size: 14px;
+            color: #34495e;
         }
         """
-
 
     def create_frame(self):
         frame = QFrame()
@@ -1219,6 +1289,6 @@ class PackageApp(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication([])
-    window = PackageApp()
+    window = ChocolateyUI()
     window.show()
     app.exec()
