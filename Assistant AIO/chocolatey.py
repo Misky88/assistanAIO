@@ -135,7 +135,7 @@ class PackageApp(QMainWindow):
 
     def is_chocolatey_installed(self):
         """Verifica si Chocolatey está instalado ejecutando su ruta absoluta"""
-        choco_path = r"C:\ProgramData\chocolatey\bin\choco.exe"
+        choco_path = r"C:\\ProgramData\\chocolatey\\bin\\choco.exe"
         if os.path.exists(choco_path):
             try:
                 result = subprocess.run([choco_path, "-v"], capture_output=True, text=True)

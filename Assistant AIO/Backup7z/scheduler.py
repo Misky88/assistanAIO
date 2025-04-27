@@ -3,7 +3,7 @@ import schedule
 import time
 import logging
 from threading import Thread
-from backup import compress_and_upload
+# from backup import compress_and_upload
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
