@@ -10,9 +10,6 @@ from comandowin import ComandaWin # Importar la clase ComandaWin
 from chocolatey import ChocolateyApp
 from app_backup import BackupApp
 
-
-
-
 class SystemInfoApp(QMainWindow):
     def __init__(self):
         super().__init__()
