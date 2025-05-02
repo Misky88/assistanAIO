@@ -1,0 +1,8 @@
+# Backup7z/requirements.txt
+PyQt6>=6.4.0
+b2sdk>=1.20.0
+b2sdk[pycryptodome]>=1.20.0
+py7zr>=0.20.0
+schedule
+requests>=2.28.0
+schedule>=1.1.0
