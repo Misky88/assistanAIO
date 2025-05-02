@@ -1,4 +1,4 @@
-# Backup7z/requirements.txt
+# requirements.txt
 PyQt6>=6.4.0
 b2sdk>=1.20.0
 b2sdk[pycryptodome]>=1.20.0

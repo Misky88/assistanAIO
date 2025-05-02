@@ -590,4 +590,3 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = BackupApp()
     window.show()
-    sys.exit(app.exec())

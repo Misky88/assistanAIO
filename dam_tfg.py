@@ -1,3 +1,4 @@
+
 import sys
 import platform
 import psutil
@@ -333,6 +334,3 @@ if __name__ == "__main__":
     
     window = SystemInfoApp()
     window.show()
-    
-    
-    sys.exit(app.exec())

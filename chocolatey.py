@@ -1229,10 +1229,3 @@ class ChocolateyApp(QMainWindow):
 #         # shell=False (por defecto), args como lista
 #         subprocess.run(args, check=True)
 #         self.finished.emit()
-
-
-if __name__ == "__main__":
-    app = QApplication([])
-    window = ChocolateyApp()
-    window.show()
-    app.exec()
