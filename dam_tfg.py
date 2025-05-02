@@ -65,7 +65,7 @@ class SystemInfoApp(QMainWindow):
                 background-color: #34495e;
             }
         """)
-        self.btn_home.clicked.connect(self.show_system_info) #PRUEBA
+        self.btn_home.clicked.connect(self.show_system_info)
         sidebar_layout.addWidget(self.btn_home)
 
         # Botón de Aplicaciones
