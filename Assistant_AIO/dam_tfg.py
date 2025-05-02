@@ -1,12 +1,14 @@
 import sys
 import platform
-import psutil 
+import psutil
+import os
+# Añadir la ruta al módulo chocolatey.py
+sys.path.append(os.path.join(os.path.dirname(__file__), 'Backup7z'))
+from assistant_aio.chocolatey import ChocolateyUI
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, QWidget,
                              QVBoxLayout, QHBoxLayout, QLabel, QFrame, QStackedWidget, QTabWidget, QLineEdit, QListWidget)
 from PyQt6.QtGui import QIcon, QFont
 from PyQt6.QtCore import QSize, Qt, QTimer
-from chocolatey import ChocolateyUI
-
 import subprocess
 
 
