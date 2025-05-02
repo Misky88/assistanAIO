@@ -1,4 +1,0 @@
-# Backup7z/config.py
-B2_APP_KEY_ID = "B2_APP_KEY_ID"
-B2_APP_KEY = "B2_APP_KEY"
-B2_BUCKET_NAME = "BUCKET"
