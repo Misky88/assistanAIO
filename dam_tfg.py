@@ -2,14 +2,16 @@
 import sys
 import platform
 import psutil
+import os
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, QWidget,
                              QVBoxLayout, QHBoxLayout, QLabel, QGridLayout, 
                              QFrame, QStackedWidget, QTabWidget, QLineEdit, QListWidget)
 from PyQt6.QtGui import QIcon, QFont
 from PyQt6.QtCore import QSize, Qt, QTimer
-from comandowin import ComandaWin # Importar la clase ComandaWin
+from comandowin import ComandaWin  # Importar la clase ComandaWin
 from chocolatey import ChocolateyApp
 from app_backup import BackupApp
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 class SystemInfoApp(QMainWindow):
     def __init__(self):

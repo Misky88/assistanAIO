@@ -12,7 +12,6 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import QDateTime, QTime
 from PyQt6.QtGui import QIcon
-# from scheduler import schedule_backup
 from backup_thread import BackupThread
 
 
