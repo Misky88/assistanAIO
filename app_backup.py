@@ -88,7 +88,7 @@ class BackupApp(QWidget):
         name_layout.addWidget(btn_reset)
 
         name_tab.setLayout(name_layout)
-        tab_widget.addTab(name_tab, "Nombre de la Copia")
+        tab_widget.addTab(name_tab, "Nombre de la Copia") #PRUEBA
 
         # File selection tab
         file_tab = QWidget()
@@ -590,4 +590,3 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = BackupApp()
     window.show()
-    sys.exit(app.exec())

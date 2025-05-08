@@ -209,4 +209,3 @@ if __name__ == "__main__":
     app.setStyle("Fusion")
     window = ComandaWin()
     window.show()
-    sys.exit(app.exec())

@@ -1,4 +1,3 @@
-# Backup7z/main.py
 import sys
 import os
 import json
@@ -602,4 +601,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = BackupApp()
     window.show()
-    sys.exit(app.exec())
+    

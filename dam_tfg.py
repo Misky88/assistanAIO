@@ -1,3 +1,4 @@
+
 import sys
 import platform
 import psutil
@@ -9,9 +10,6 @@ from PyQt6.QtCore import QSize, Qt, QTimer
 from comandowin import ComandaWin # Importar la clase ComandaWin
 from chocolatey import ChocolateyApp
 from app_backup import BackupApp
-
-
-
 
 class SystemInfoApp(QMainWindow):
     def __init__(self):
@@ -336,6 +334,3 @@ if __name__ == "__main__":
     
     window = SystemInfoApp()
     window.show()
-    
-    
-    sys.exit(app.exec())
