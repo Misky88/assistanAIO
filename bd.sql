@@ -157,3 +157,27 @@ end;
 ALTER TRIGGER  "BI_USUARIOS" ENABLE
 /
 
+CREATE TABLE  "EQUIPOS" 
+   (	"EQU_ID" NUMBER(10,0), 
+	"EQU_EMP" NUMBER(10,0), 
+	"EQU_NOMBRE" VARCHAR2(30), 
+	"EQU_IP" VARCHAR2(15), 
+	"EQU_UBICACION" VARCHAR2(100), 
+	"EQU_ACTIVO" VARCHAR2(1), 
+	"EQU_ESTADO" VARCHAR2(30), 
+	 CONSTRAINT "EQUIPOS_PK" PRIMARY KEY ("EQU_ID") ENABLE
+   )
+/
+
+CREATE OR REPLACE TRIGGER  "BI_EQUIPOS" 
+  before insert on "EQUIPOS"               
+  for each row  
+begin   
+  if :NEW."EQU_ID" is null then 
+    select "EQUIPOS_SEQ".nextval into :NEW."EQU_ID" from sys.dual; 
+  end if; 
+end; 
+
+/
+ALTER TRIGGER  "BI_EQUIPOS" ENABLE
+/
