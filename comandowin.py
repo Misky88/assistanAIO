@@ -46,47 +46,37 @@ class ComandaWin(QMainWindow):
         self.init_ui()
 
     def init_ui(self):
+        # Widget central
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        layout = QVBoxLayout(central_widget)
+
+        # Cabecera
         header = QLabel("🖥️ Ejecutar Comandos de Windows")
         header.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
         header.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         header.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
-
-        layout = QVBoxLayout(self)
         layout.addWidget(header)
-        
+
         # Crear el menú
         self.menu_bar = self.menuBar()
-        
-        # Menú de Comandos
         self.commands_menu = self.menu_bar.addMenu("Comandos")
-        
+
         # Acción para agregar comando
         self.add_command_action = QAction("Agregar Comando", self)
         self.add_command_action.triggered.connect(self.add_command)
         self.commands_menu.addAction(self.add_command_action)
-        
+
         # Acción para editar comando
         self.edit_command_action = QAction("Editar Comando", self)
         self.edit_command_action.triggered.connect(self.edit_command)
         self.commands_menu.addAction(self.edit_command_action)
-        
+
         # Acción para borrar comando
         self.delete_command_action = QAction("Borrar Comando", self)
         self.delete_command_action.triggered.connect(self.delete_command)
         self.commands_menu.addAction(self.delete_command_action)
-        
-        # Widget central
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        
-        layout = QVBoxLayout(central_widget)
-        
-        # Cabecera
-        header = QLabel("Ejecutor de Comandos de Windows")
-        header.setFont(QFont("Arial", 18, QFont.Weight.Bold))
-        header.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        header.setStyleSheet("color: #2c3e50; padding: 15px;")
-        
+
         # Barra de búsqueda
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("Buscar comandos...")
@@ -101,7 +91,8 @@ class ComandaWin(QMainWindow):
                 background-color: #ffffff;
             }
         """)
-        
+        layout.addWidget(self.search_bar)
+
         # Lista de comandos
         self.command_list = QListWidget()
         self.command_list.itemDoubleClicked.connect(self.execute_command)
@@ -125,8 +116,9 @@ class ComandaWin(QMainWindow):
                 color: #ffffff;
             }
         """)
-        
-        # Botones
+        layout.addWidget(self.command_list)
+
+        # Botón de ejecutar
         btn_execute = QPushButton("Ejecutar Comando")
         btn_execute.clicked.connect(self.execute_command)
         btn_execute.setStyleSheet("""
@@ -142,13 +134,8 @@ class ComandaWin(QMainWindow):
                 background-color: #2980b9;
             }
         """)
-        
-        # Diseño
-        layout.addWidget(header)
-        layout.addWidget(self.search_bar)
-        layout.addWidget(self.command_list)
         layout.addWidget(btn_execute)
-        
+
         self.load_commands()
         
     def load_commands(self):
