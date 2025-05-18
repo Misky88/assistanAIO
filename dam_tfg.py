@@ -219,12 +219,21 @@ class SystemInfoApp(QMainWindow):
 
     def show_system_info(self):
         """Muestra la información del sistema en el área principal"""
-        # Limpiar contenido anterior
-        if self.system_info_page.layout():
-            QWidget().setLayout(self.system_info_page.layout())
-        
+    # Limpiar contenido anterior
+        old_layout = self.system_info_page.layout()
+        if old_layout is not None:
+            # Eliminar widgets del layout anterior
+            while old_layout.count():
+                item = old_layout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+            # Eliminar el layout del widget
+            old_layout.deleteLater()
+
         layout = QVBoxLayout(self.system_info_page)
         layout.setContentsMargins(30, 30, 30, 30)
+    
         
         # Encabezado
         header = QLabel("Información del Sistema")

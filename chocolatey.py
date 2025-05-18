@@ -13,17 +13,10 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QFont, QGuiApplication
 
-# DEPENDENCIAS NECESARIAS PARA LA OPCION DE INSTALAR CHOCOLATEY AUTOMATICAMENTE
-# from PyQt6.QtWidgets import QProgressBar
-# from PyQt6.QtCore import QThread, pyqtSignal
-# from PyQt6.QtGui import QIcon
-
-
 class ChocolateyApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Package App Manager")
-        
         self.setGeometry(100, 100, 700, 500)
         self.setStyleSheet(self.get_styles())
         self.app_dict = {}
@@ -84,17 +77,17 @@ class ChocolateyApp(QMainWindow):
 
 
     def setup_ui(self):
-        # Crear layout principal
-        layout = QVBoxLayout(self)
-        self.setLayout(layout)
+        # Crear widget central
+        central_widget = QWidget(self)
+        self.setCentralWidget(central_widget)
+        # Crear layout principal para el widget central
+        layout = QVBoxLayout(central_widget)
         
         # Crear título centrado
         header = QLabel("🧩 Gestor de Aplicaciones")
         header.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
         header.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         header.setStyleSheet("color: #2c3e50; margin-bottom: 10px;")
-
-        # Añadir al layout
         layout.addWidget(header)
 
         self.tabs = QTabWidget()
@@ -127,7 +120,7 @@ class ChocolateyApp(QMainWindow):
         self.tabs.addTab(self.create_group_tab(), "📦 Agrupaciones")
         self.tabs.addTab(self.create_manage_tab(), "🛠️ Actualizar/Desinstalar")
         self.tabs.addTab(self.create_log_tab(), "📝 Historial")
-        self.setCentralWidget(self.tabs)
+        layout.addWidget(self.tabs)
 
 
     def create_title_label(self, text):
@@ -797,52 +790,45 @@ class ChocolateyApp(QMainWindow):
 
         app_name = selected_item.text()
         app_id = self.app_dict.get(app_name)
-
         if not app_id:
             self.log_text.append(f"No se encontró el ID para la app: {app_name}")
             return
 
         self.log_text.append(f"Instalando {app_name} usando Chocolatey...")
-
         try:
             subprocess.run(["choco", "install", app_id, "-y"], check=True, shell=True)
             self.log_text.append(f"{app_name} instalado correctamente con Chocolatey.")
         except subprocess.CalledProcessError as e:
             self.log_text.append(f"Error al instalar {app_name} con Chocolatey: {e}")
-
-
-    def update_all_apps(self):
-        """Actualiza todas las aplicaciones instaladas"""
-        self.log_text.append("Buscando actualizaciones para todas las aplicaciones...")
-        try:
-            result = subprocess.run(["winget", "upgrade", "--all", "-e", "--accept-package-agreements", "--accept-source-agreements"], capture_output=True, text=True, check=True)
-            self.log_text.append(result.stdout)
-        except subprocess.CalledProcessError as e:
-            self.log_text.append(f"Error al actualizar aplicaciones: {e}")
-
-
-    def add_to_group(self):
+    
+        def update_all_apps(self):
+            """Actualiza todas las aplicaciones instaladas"""
+            self.log_text.append("Buscando actualizaciones para todas las aplicaciones...")
+            try:
+                result = subprocess.run(
+                    ["winget", "upgrade", "--all", "-e", "--accept-package-agreements", "--accept-source-agreements"],
+                    capture_output=True, text=True, check=True
+                )
+                self.log_text.append(result.stdout)
+            except subprocess.CalledProcessError as e:
+                self.log_text.append(f"Error al actualizar aplicaciones: {e}")
         """Añade aplicaciones seleccionadas (con check) a la agrupación"""
         added = 0
-
         for i in range(self.search_results.count()):
             item = self.search_results.item(i)
             if item.checkState() == Qt.CheckState.Checked:
                 app_name = item.text()
                 app_id = self.app_dict.get(app_name)
-                if app_id:
-                    if not self.is_already_in_group(app_name):
-                        self.group_list.addItem(app_name)
-                        self.group_dict[app_name] = app_id
-                        self.log_text.append(f"{app_name} añadido a la agrupación.")
-                        added += 1
-                    item.setCheckState(Qt.CheckState.Unchecked)
-
-        self.show_toast("Añadido a la agrupacion")
-
+                if app_id and not self.is_already_in_group(app_name):
+                    self.group_list.addItem(app_name)
+                    self.group_dict[app_name] = app_id
+                    self.log_text.append(f"{app_name} añadido a la agrupación.")
+                    added += 1
+                item.setCheckState(Qt.CheckState.Unchecked)
         if added == 0:
             self.log_text.append("No se seleccionó ninguna aplicación para añadir.")
-
+        else:
+            self.show_toast("Añadido a la agrupacion")
 
     def is_already_in_group(self, text):
         """Evita duplicados en la agrupación"""
@@ -851,7 +837,6 @@ class ChocolateyApp(QMainWindow):
                 self.log_text.append(f"{self.group_list.item(i).text()} está ya añadido en la Agrupacion")
                 return True
         return False
-
 
     def delete_from_group(self):
         """Elimina la aplicación seleccionada de la agrupación"""
@@ -863,6 +848,8 @@ class ChocolateyApp(QMainWindow):
         app_name = selected_item.text()
         row = self.group_list.row(selected_item)
         self.group_list.takeItem(row)
+        if app_name in self.group_dict:
+            del self.group_dict[app_name]
         self.log_text.append(f"'{app_name}' eliminado de la agrupación.")
         self.show_toast("Eliminado de la agrupacion")
 
