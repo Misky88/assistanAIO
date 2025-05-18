@@ -59,29 +59,7 @@ CREATE SEQUENCE   "USUARIOS_SEQ"  MINVALUE 1 MAXVALUE 99999999999999999999999999
 CREATE SEQUENCE   "EMPRESAS_SEQ"  MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 1 CACHE 20 NOORDER  NOCYCLE
 /
 
-/* FUNCIONES */
-create or replace FUNCTION AUTENTIFICACION (p_username IN VARCHAR2,  
-                                        p_password IN VARCHAR2)  
-RETURN BOOLEAN  
-IS  
-    l_clave_alm VARCHAR2(4000);  
-    l_count     NUMBER;      
-BEGIN  
-    SELECT COUNT(*) INTO l_count FROM USUARIOS  
-    WHERE upper(usu_nombre) = upper(p_username);  
-    apex_debug.message('Usuario: '||p_username||', Clave: '||p_password||', Count: '||l_count);
-    IF l_count > 0 THEN
-        SELECT usu_clave  
-        INTO l_clave_alm  
-        FROM USUARIOS  
-        WHERE upper(usu_nombre) = upper(p_username);  
-        IF toolkit.encriptar(p_password,'AIO987654') = l_clave_alm THEN
-            RETURN TRUE;
-        ELSE RETURN FALSE;
-        END IF;
-    ELSE RETURN FALSE;
-    END IF;  
-END;
+
 
 /* TABLAS */
 CREATE TABLE  "CLIENTES" 
@@ -94,11 +72,10 @@ CREATE TABLE  "CLIENTES"
 	"CLI_TELEFONO" VARCHAR2(255), 
 	"CLI_DIRECCION" VARCHAR2(255), 
 	"CLI_TIPO" VARCHAR2(1), 
-	"CLI_EMPRESA" NUMBER(10,0), 
+	"CLI_LICENCIA" VARCHAR2(15), 
 	 CONSTRAINT "CLIENTES_PK" PRIMARY KEY ("CLI_ID") ENABLE
    )
 /
-
 CREATE OR REPLACE TRIGGER  "BI_CLIENTES" 
   before insert on "CLIENTES"               
   for each row  
@@ -114,6 +91,7 @@ ALTER TRIGGER  "BI_CLIENTES" ENABLE
 
 CREATE TABLE  "EMPRESAS" 
    (	"EMP_ID" NUMBER(10,0), 
+	"EMP_CLIENTE" NUMBER(10,0), 
 	"EMP_NOMBRE" VARCHAR2(50), 
 	"EMP_CAPACIDAD" NUMBER(10,2), 
 	"EMP_USADO" NUMBER(10,2), 
@@ -181,3 +159,62 @@ end;
 /
 ALTER TRIGGER  "BI_EQUIPOS" ENABLE
 /
+
+/* FUNCIONES */
+create or replace FUNCTION AUT_USUARIOS (p_username IN VARCHAR2,  
+                                        p_password IN VARCHAR2)  
+RETURN BOOLEAN  
+IS  
+    l_clave_alm VARCHAR2(4000);  
+    l_count     NUMBER;      
+BEGIN  
+    SELECT COUNT(*) INTO l_count FROM USUARIOS  
+    WHERE upper(usu_nombre) = upper(p_username);  
+    apex_debug.message('Usuario: '||p_username||', Clave: '||p_password||', Count: '||l_count);
+    IF l_count > 0 and p_username is not null and p_password is not null THEN   --Comprueba que existan usuarios y le hayas pasado un usuario/clave
+        SELECT usu_clave  
+        INTO l_clave_alm  
+        FROM USUARIOS  
+        WHERE upper(usu_nombre) = upper(p_username);  
+        IF toolkit.encriptar(p_password,'AIO987654') = l_clave_alm THEN
+            RETURN TRUE;
+        ELSE RETURN FALSE;
+        END IF;
+    ELSE RETURN FALSE;
+    END IF;  
+END;
+
+create or replace FUNCTION AUT_CLIENTES (p_username IN VARCHAR2,  
+                                        p_password IN VARCHAR2)  
+RETURN BOOLEAN  
+IS  
+    l_clave_alm VARCHAR2(4000);  
+    l_count     NUMBER;      
+BEGIN  
+    SELECT COUNT(*) INTO l_count FROM CLIENTES  
+    WHERE upper(cli_email) = upper(p_username);  
+    apex_debug.message('Usuario: '||p_username||', Clave: '||p_password||', Count: '||l_count);
+    IF l_count > 0 and p_username is not null and p_password is not null THEN   --Comprueba que existan usuarios y le hayas pasado un usuario/clave
+        SELECT cli_clave  
+        INTO l_clave_alm  
+        FROM CLIENTES  
+        WHERE upper(cli_email) = upper(p_username);  
+        IF toolkit.encriptar(p_password,'AIO987654') = l_clave_alm THEN
+            RETURN TRUE;
+        ELSE RETURN FALSE;
+        END IF;
+    ELSE RETURN FALSE;
+    END IF;  
+END;
+
+create or replace FUNCTION GENERAR_LICENCIA RETURN VARCHAR2 IS
+    v_key   VARCHAR2(15);
+    v_chars CONSTANT VARCHAR2(100) := 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+BEGIN
+    v_key := '';
+    FOR i IN 1..15 LOOP
+        v_key := v_key || SUBSTR(v_chars, TRUNC(DBMS_RANDOM.VALUE(1, LENGTH(v_chars) + 1)), 1);
+    END LOOP;
+
+    RETURN v_key;
+END;
