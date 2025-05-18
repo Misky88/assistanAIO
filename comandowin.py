@@ -51,7 +51,6 @@ class ComandaWin(QMainWindow):
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
 
-        # Cabecera
         header = QLabel("🖥️ Ejecutar Comandos de Windows")
         header.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
         header.setAlignment(Qt.AlignmentFlag.AlignHCenter)
