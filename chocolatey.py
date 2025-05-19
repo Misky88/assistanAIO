@@ -10,8 +10,15 @@ from PyQt6.QtWidgets import (
     QFrame, QSizePolicy, QSpacerItem, QComboBox, QDialog, QVBoxLayout, QLabel, QDialog, 
     QVBoxLayout, QLabel, QPushButton, QTextEdit, QMessageBox,
 )
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal
 from PyQt6.QtGui import QFont, QGuiApplication
+from PyQt6.QtWidgets import QPlainTextEdit, QProgressBar
+
+# DEPENDENCIAS NECESARIAS PARA LA OPCION DE INSTALAR CHOCOLATEY AUTOMATICAMENTE
+# from PyQt6.QtWidgets import QProgressBar
+# from PyQt6.QtCore import QThread, pyqtSignal
+# from PyQt6.QtGui import QIcon
+
 
 class ChocolateyApp(QMainWindow):
     def __init__(self):
@@ -24,6 +31,12 @@ class ChocolateyApp(QMainWindow):
         self.package_manager = 'winget'
         self.setup_ui()
 
+        self.tabs.currentChanged.connect(self.on_tab_changed)
+
+    def on_tab_changed(self, index):
+        if index == 3 and hasattr(self, "filter_input"):
+            self.filter_input.clear()
+        
     def is_running_as_admin(self):
         """Devuelve True si el programa se ejecuta como Administrador"""
         try:
@@ -70,6 +83,7 @@ class ChocolateyApp(QMainWindow):
         """
 
 
+
     def create_frame(self):
         frame = QFrame()
         frame.setFrameShape(QFrame.Shape.StyledPanel)
@@ -77,17 +91,17 @@ class ChocolateyApp(QMainWindow):
 
 
     def setup_ui(self):
-        # Crear widget central
-        central_widget = QWidget(self)
-        self.setCentralWidget(central_widget)
-        # Crear layout principal para el widget central
-        layout = QVBoxLayout(central_widget)
+        # Crear layout principal
+        layout = QVBoxLayout(self)
+        self.setLayout(layout)
         
         # Crear título centrado
         header = QLabel("🧩 Gestor de Aplicaciones")
         header.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
         header.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         header.setStyleSheet("color: #2c3e50; margin-bottom: 10px;")
+
+        # Añadir al layout
         layout.addWidget(header)
 
         self.tabs = QTabWidget()
@@ -120,7 +134,7 @@ class ChocolateyApp(QMainWindow):
         self.tabs.addTab(self.create_group_tab(), "📦 Agrupaciones")
         self.tabs.addTab(self.create_manage_tab(), "🛠️ Actualizar/Desinstalar")
         self.tabs.addTab(self.create_log_tab(), "📝 Historial")
-        layout.addWidget(self.tabs)
+        self.setCentralWidget(self.tabs)
 
 
     def create_title_label(self, text):
@@ -498,6 +512,7 @@ class ChocolateyApp(QMainWindow):
         buttons_layout.addWidget(self.create_button("Eliminar", self.delete_from_group))
         buttons_layout.addWidget(self.create_button("Exportar", self.export_group))
         buttons_layout.addWidget(self.create_button("Importar", self.import_group))
+        buttons_layout.addWidget(self.create_button("Instalar Agrupación", self.install_group))
         self.add_spacer(buttons_layout)
         layout.addLayout(buttons_layout)
 
@@ -752,11 +767,43 @@ class ChocolateyApp(QMainWindow):
             self.log_text.append(f"Ocurrió un error al buscar en Chocolatey: {e}")
 
     #****************** INSTALAR PAQUETES SELECICONADOS *************************
+    # def install_selected_app(self):
+    #     if self.package_manager == "winget":
+    #         self.install_selected_app_winget()
+    #     else:
+    #         self.install_selected_app_choco()
+
     def install_selected_app(self):
-        if self.package_manager == "winget":
-            self.install_selected_app_winget()
-        else:
-            self.install_selected_app_choco()
+        selected_item = self.search_results.currentItem()
+        if not selected_item:
+            self.log_text.append("Por favor, selecciona una aplicación para instalar.")
+            return
+
+        app_name = selected_item.text()
+        app_id = self.app_dict.get(app_name)
+
+        if not app_id:
+            self.log_text.append(f"No se encontró el ID para la app: {app_name}")
+            return
+        
+        if app_name.lower() in [a.lower() for a in self.all_installed]:
+            respuesta = QMessageBox.question(
+                self,
+                "Aplicación ya instalada",
+                f"La aplicación '{app_name}' ya está instalada.\n¿Deseas actualizar o desinstalar el paquete?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            if respuesta == QMessageBox.StandardButton.Yes:
+                self.tabs.setCurrentIndex(3)
+                self.filter_input.setText(app_name)
+            return
+
+        self.log_text.append(f"Iniciando instalación de '{app_name}'...")
+
+        thread = InstallSingleThread(app_name, app_id, self.package_manager)
+        thread.finalizado.connect(self.load_installed_apps)
+        dialog = ProgressDialog("Instalando aplicación", thread, self, mensaje_final=f"'{app_name}' se ha instalado correctamente.")
+        dialog.exec()
 
 
     def install_selected_app_winget(self):
@@ -773,12 +820,12 @@ class ChocolateyApp(QMainWindow):
             self.log_text.append(f"No se encontró el ID para la app: {app_name}")
             return
         
-        self.log_text.append(f"Instalando {app_id} usando Winget...")
-        # try:
-        #     subprocess.run(["winget", "install", "--id", app_id, "-e", "--accept-package-agreements", "--accept-source-agreements"], check=True)
-        #     self.log_text.append(f"{app_id} instalado correctamente.")
-        # except subprocess.CalledProcessError as e:
-        #     self.log_text.append(f"Error al instalar {app_id}: {e}")
+        self.log_text.append(f"Instalando '{app_id}' usando Winget...")
+        try:
+            subprocess.run(["winget", "install", "--id", app_id, "-e", "--accept-package-agreements", "--accept-source-agreements"], check=True)
+            self.log_text.append(f"{app_id} instalado correctamente.")
+        except subprocess.CalledProcessError as e:
+            self.log_text.append(f"Error al instalar {app_id}: {e}")
 
 
     def install_selected_app_choco(self):
@@ -790,45 +837,60 @@ class ChocolateyApp(QMainWindow):
 
         app_name = selected_item.text()
         app_id = self.app_dict.get(app_name)
+
         if not app_id:
             self.log_text.append(f"No se encontró el ID para la app: {app_name}")
             return
 
         self.log_text.append(f"Instalando {app_name} usando Chocolatey...")
+
         try:
             subprocess.run(["choco", "install", app_id, "-y"], check=True, shell=True)
             self.log_text.append(f"{app_name} instalado correctamente con Chocolatey.")
         except subprocess.CalledProcessError as e:
             self.log_text.append(f"Error al instalar {app_name} con Chocolatey: {e}")
-    
-        def update_all_apps(self):
-            """Actualiza todas las aplicaciones instaladas"""
-            self.log_text.append("Buscando actualizaciones para todas las aplicaciones...")
-            try:
-                result = subprocess.run(
-                    ["winget", "upgrade", "--all", "-e", "--accept-package-agreements", "--accept-source-agreements"],
-                    capture_output=True, text=True, check=True
-                )
-                self.log_text.append(result.stdout)
-            except subprocess.CalledProcessError as e:
-                self.log_text.append(f"Error al actualizar aplicaciones: {e}")
+
+
+    # def update_all_apps(self):
+    #     """Actualiza todas las aplicaciones instaladas"""
+    #     self.log_text.append("Buscando actualizaciones para todas las aplicaciones...")
+    #     try:
+    #         result = subprocess.run(["winget", "upgrade", "--all", "-e", "--accept-package-agreements", "--accept-source-agreements"], capture_output=True, text=True, check=True)
+    #         self.log_text.append(result.stdout)
+    #     except subprocess.CalledProcessError as e:
+    #         self.log_text.append(f"Error al actualizar aplicaciones: {e}")
+
+    def update_all_apps(self):
+        self.log_text.append("Iniciando actualización de todas las aplicaciones...")
+
+        thread = UpdateAllThread(self.package_manager)
+        thread.finalizado.connect(self.load_installed_apps)
+        dialog = ProgressDialog("Actualizando todos los paquetes...", thread, self, mensaje_final=f"Paquetes actualizados correctamente.", permitir_cancelar=True)
+        dialog.exec()
+
+
+    def add_to_group(self):
         """Añade aplicaciones seleccionadas (con check) a la agrupación"""
         added = 0
+
         for i in range(self.search_results.count()):
             item = self.search_results.item(i)
             if item.checkState() == Qt.CheckState.Checked:
                 app_name = item.text()
                 app_id = self.app_dict.get(app_name)
-                if app_id and not self.is_already_in_group(app_name):
-                    self.group_list.addItem(app_name)
-                    self.group_dict[app_name] = app_id
-                    self.log_text.append(f"{app_name} añadido a la agrupación.")
-                    added += 1
-                item.setCheckState(Qt.CheckState.Unchecked)
+                if app_id:
+                    if not self.is_already_in_group(app_name):
+                        self.group_list.addItem(app_name)
+                        self.group_dict[app_name] = app_id
+                        self.log_text.append(f"{app_name} añadido a la agrupación.")
+                        added += 1
+                    item.setCheckState(Qt.CheckState.Unchecked)
+
+        self.show_toast("Añadido a la agrupacion")
+
         if added == 0:
             self.log_text.append("No se seleccionó ninguna aplicación para añadir.")
-        else:
-            self.show_toast("Añadido a la agrupacion")
+
 
     def is_already_in_group(self, text):
         """Evita duplicados en la agrupación"""
@@ -837,6 +899,7 @@ class ChocolateyApp(QMainWindow):
                 self.log_text.append(f"{self.group_list.item(i).text()} está ya añadido en la Agrupacion")
                 return True
         return False
+
 
     def delete_from_group(self):
         """Elimina la aplicación seleccionada de la agrupación"""
@@ -848,8 +911,6 @@ class ChocolateyApp(QMainWindow):
         app_name = selected_item.text()
         row = self.group_list.row(selected_item)
         self.group_list.takeItem(row)
-        if app_name in self.group_dict:
-            del self.group_dict[app_name]
         self.log_text.append(f"'{app_name}' eliminado de la agrupación.")
         self.show_toast("Eliminado de la agrupacion")
 
@@ -893,13 +954,83 @@ class ChocolateyApp(QMainWindow):
 
             except Exception as e:
                 self.log_text.append(f"Error al importar agrupación: {e}")
+
+    def install_group(self):
+        """Lanza un hilo para instalar la agrupación sin bloquear la interfaz"""
+        if not self.group_dict:
+            self.log_text.append("No hay paquetes en la agrupación para instalar.")
+            return
+
+        self.log_text.append(f"Iniciando instalación de agrupación con {self.package_manager.capitalize()}...")
+
+        thread = InstallGroupThread(self.group_dict, self.package_manager)
+        thread.finalizado.connect(self.load_installed_apps)
+        dialog = ProgressDialog(
+            titulo="Instalando agrupación",
+            thread=thread,
+            parent=self,
+            total=len(self.group_dict),
+            mensaje_final="La instalación de los paquetes ha finalizado.",
+            permitir_cancelar=True
+        )
+        dialog.exec()
+
+    def install_group_winget(self):
+        """Instala todos los paquetes de la agrupación usando WinGet"""
+        self.log_text.append("Instalando la agrupacion...")
+
+        for app_name, app_id in self.group_dict.items():
+            self.log_text.append(f"Instalando '{app_name}' (ID: {app_id})...")
+            try:
+                # subprocess.run(
+                #     ["winget", "install", "--id", app_id, "-e", "--accept-package-agreements", "--accept-source-agreements"],
+                #     check=True
+                # )
+                self.log_text.append(f"'{app_name}' instalado correctamente.")
+            except subprocess.CalledProcessError as e:
+                self.log_text.append(f"Error al instalar '{app_name}': {e}")
+
+    def install_group_choco(self):
+        """Instala todos los paquetes de la agrupación usando Chocolatey"""
+        self.log_text.append("Instalando la agrupacion...")
+
+        for app_name, app_id in self.group_dict.items():
+            self.log_text.append(f"Instalando '{app_name}' (ID: {app_id})...")
+            try:
+                # subprocess.run(["choco", "install", app_id, "-y"], check=True, shell=True)
+                self.log_text.append(f"'{app_name}' instalado correctamente.")
+            except subprocess.CalledProcessError as e:
+                self.log_text.append(f"Error al instalar '{app_name}': {e}")
         
     #******************** ACTUALIZAR LOS PAQUETES *************************
+    # def update_selected_apps(self):
+    #     if self.package_manager == "winget":
+    #         self.update_selected_apps_winget()
+    #     else:
+    #         self.update_selected_apps_choco()
+
     def update_selected_apps(self):
-        if self.package_manager == "winget":
-            self.update_selected_apps_winget()
-        else:
-            self.update_selected_apps_choco()
+        selected_items = self.installed_apps.selectedItems()
+        if not selected_items:
+            self.log_text.append("Por favor, selecciona una o más aplicaciones para actualizar.")
+            return
+
+        for item in selected_items:
+            app_name = item.text()
+
+            if self.package_manager == "winget":
+                app_id = self.installed_apps_dict.get(app_name)
+                if not app_id:
+                    self.log_text.append(f"No se encontró el ID para la app: {app_name}")
+                    continue
+            else:
+                app_id = app_name
+
+            thread = UpdateSingleThread(app_name, app_id, self.package_manager)
+            thread.finalizado.connect(self.load_installed_apps)
+            dialog = ProgressDialog("Actualizando aplicación", thread, self)
+            dialog.exec()
+            self.filter_input.clear()
 
 
     def update_selected_apps_winget(self):
@@ -942,11 +1073,34 @@ class ChocolateyApp(QMainWindow):
                 self.log_text.append(f"Error al actualizar {app_name} con Chocolatey: {e}")
 
     #******************** DESISNTALAR LOS PAQUETES ****************************
+    # def uninstall_selected_apps(self):
+    #     if self.package_manager == "winget":
+    #         self.uninstall_selected_apps_winget()
+    #     else:
+    #         self.uninstall_selected_apps_choco()
+
     def uninstall_selected_apps(self):
-        if self.package_manager == "winget":
-            self.uninstall_selected_apps_winget()
-        else:
-            self.uninstall_selected_apps_choco()
+        selected_items = self.installed_apps.selectedItems()
+        if not selected_items:
+            self.log_text.append("Por favor, selecciona una o más aplicaciones para desinstalar.")
+            return
+
+        for item in selected_items:
+            app_name = item.text()
+
+            if self.package_manager == "winget":
+                app_id = self.installed_apps_dict.get(app_name)
+                if not app_id:
+                    self.log_text.append(f"No se encontró el ID para la app: {app_name}")
+                    continue
+            else:
+                app_id = app_name
+
+            thread = UninstallSingleThread(app_name, app_id, self.package_manager)
+            thread.finalizado.connect(self.load_installed_apps)
+            dialog = ProgressDialog("Desinstalando aplicación", thread, self, mensaje_final=f"'{app_name}' se ha desinstalado correctamente.")
+            dialog.exec()
+            self.filter_input.clear()
 
 
     def uninstall_selected_apps_winget(self):
@@ -1216,3 +1370,366 @@ class ChocolateyApp(QMainWindow):
 #         # shell=False (por defecto), args como lista
 #         subprocess.run(args, check=True)
 #         self.finished.emit()
+
+
+class ProgressDialog(QDialog):
+    def __init__(self, titulo, thread, parent=None, total=None, mensaje_final="La acción se ha completado correctamente.", permitir_cancelar=False):
+        super().__init__(parent)
+        self.setWindowTitle("Procesando...")
+        self.setFixedSize(480, 220)
+        self.setModal(True)
+        self.thread = thread
+        self.mensaje_final = mensaje_final
+        self.total = total
+        self.pasos = 0
+
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #f5f7f9;
+                border: none;
+            }
+            QLabel#titleLabel {
+                font-size: 18px;
+                font-weight: bold;
+                color: white;
+                background-color: #2980b9;
+                border-top-left-radius: 10px;
+                border-top-right-radius: 10px;
+                padding: 15px;
+            }
+            QLabel#mensajeLabel {
+                font-size: 14px;
+                padding: 10px 20px;
+                color: #2c3e50;
+            }
+            QProgressBar {
+                height: 20px;
+                margin: 10px 20px;
+                border-radius: 10px;
+                background-color: #ecf0f1;
+                text-align: center;
+                font-weight: bold;
+            }
+            QProgressBar::chunk {
+                background-color: #3498db;
+                border-radius: 10px;
+            }
+            QPushButton {
+                padding: 8px 16px;
+                margin: 0 20px;
+                border-radius: 6px;
+                background-color: #e74c3c;
+                color: white;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #c0392b;
+            }
+        """)
+
+        layout = QVBoxLayout(self)
+
+        title = QLabel(f"⚙️ {titulo}")
+        title.setObjectName("titleLabel")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(title)
+
+        self.mensaje_label = QLabel("Iniciando...")
+        self.mensaje_label.setObjectName("mensajeLabel")
+        self.mensaje_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.mensaje_label)
+
+        self.progress_bar = QProgressBar()
+        if total:
+            self.progress_bar.setRange(0, total)
+        else:
+            self.progress_bar.setRange(0, 0)
+        layout.addWidget(self.progress_bar)
+
+        if permitir_cancelar:
+            self.cancel_button = QPushButton("Cancelar")
+            self.cancel_button.clicked.connect(self.cancelar_instalacion)
+            layout.addWidget(self.cancel_button)
+
+        self.thread.progreso.connect(self.actualizar_mensaje)
+        self.thread.finalizado.connect(self.finalizar_y_notificar)
+        self.thread.cancelado.connect(self.actualizar_mensaje)
+
+        self.thread.start()
+
+    def actualizar_mensaje(self, texto):
+        self.mensaje_label.setText(texto)
+        if self.total:
+            self.pasos += 1
+            self.progress_bar.setValue(self.pasos)
+
+    def cancelar_instalacion(self):
+        self.thread.cancelar()
+        if hasattr(self, 'cancel_button'):
+            self.cancel_button.setEnabled(False)
+        self.mensaje_label.setText("Cancelando...")
+
+    def finalizar_y_notificar(self):
+        self.accept()
+        SuccessDialog(self.mensaje_final, parent=self.parent()).exec()
+
+
+class SuccessDialog(QDialog):
+    def __init__(self, mensaje, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("✅ Éxito")
+        self.setFixedSize(420, 160)
+        self.setModal(True)
+
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #ffffff;
+                border-radius: 12px;
+            }
+            QLabel#titulo {
+                font-size: 18px;
+                font-weight: bold;
+                color: #2ecc71;
+                padding-top: 20px;
+            }
+            QLabel#mensaje {
+                font-size: 14px;
+                padding: 10px 30px;
+                color: #2c3e50;
+            }
+            QPushButton {
+                padding: 8px 20px;
+                margin-top: 10px;
+                border-radius: 6px;
+                background-color: #2980b9;
+                color: white;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #1c6ea4;
+            }
+        """)
+
+        layout = QVBoxLayout()
+
+        titulo = QLabel("✅ Acción completada")
+        titulo.setObjectName("titulo")
+        titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(titulo)
+
+        label = QLabel(mensaje)
+        label.setObjectName("mensaje")
+        label.setWordWrap(True)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(label)
+
+        ok_button = QPushButton("Cerrar")
+        ok_button.clicked.connect(self.accept)
+        ok_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        layout.addWidget(ok_button, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.setLayout(layout)
+
+
+class InstallGroupThread(QThread):
+    progreso = pyqtSignal(str)
+    finalizado = pyqtSignal()
+    cancelado = pyqtSignal(str)
+
+    def __init__(self, group_dict, package_manager):
+        super().__init__()
+        self.group_dict = group_dict
+        self.package_manager = package_manager
+        self._cancelar = False
+
+    def run(self):
+        total = len(self.group_dict)
+        actual = 1
+
+        for app_name, app_id in self.group_dict.items():
+            if self._cancelar:
+                self.cancelado.emit("Instalación cancelada. No se instalarán más paquetes.")
+                break
+
+            self.progreso.emit(f"[{actual}/{total}] Instalando '{app_name}'...")
+
+            try:
+                # if self.package_manager == "winget":
+                #     cmd = ["winget", "install", "--id", app_id, "-e", "--accept-package-agreements", "--accept-source-agreements"]
+                #     subprocess.run(cmd, check=True)
+                # else:
+                #     cmd = ["choco", "install", app_id, "-y"]
+                #     subprocess.run(cmd, check=True, shell=True)
+
+                self.progreso.emit(f"'{app_name}' instalado correctamente.")
+            except subprocess.CalledProcessError as e:
+                self.progreso.emit(f"Error al instalar '{app_name}': {e}")
+
+            actual += 1
+
+        self.finalizado.emit()
+
+    def cancelar(self):
+        self._cancelar = True
+
+class InstallSingleThread(QThread):
+    progreso = pyqtSignal(str)
+    finalizado = pyqtSignal()
+    cancelado = pyqtSignal(str)
+
+    def __init__(self, app_name, app_id, gestor):
+        super().__init__()
+        self.app_name = app_name
+        self.app_id = app_id
+        self.gestor = gestor
+        self._cancelar = False
+
+    def run(self):
+        if self._cancelar:
+            self.cancelado.emit(f"Instalación cancelada antes de empezar.")
+            return
+
+        self.progreso.emit(f"Instalando '{self.app_name}'...")
+
+        try:
+            if self.gestor == "winget":
+                cmd = ["winget", "install", "--id", self.app_id, "-e", "--accept-package-agreements", "--accept-source-agreements"]
+                subprocess.run(cmd, check=True)
+            else:
+                cmd = ["choco", "install", self.app_id, "-y"]
+                subprocess.run(cmd, check=True, shell=True)
+
+            if self._cancelar:
+                self.cancelado.emit(f"Instalación de '{self.app_name}' cancelada.")
+                return
+
+            self.progreso.emit(f"'{self.app_name}' instalado correctamente.")
+        except subprocess.CalledProcessError as e:
+            self.progreso.emit(f"Error al instalar '{self.app_name}': {e}")
+        self.finalizado.emit()
+
+    def cancelar(self):
+        self._cancelar = True
+
+
+class UninstallSingleThread(QThread):
+    progreso = pyqtSignal(str)
+    finalizado = pyqtSignal()
+    cancelado = pyqtSignal(str)
+
+    def __init__(self, app_name, app_id, gestor):
+        super().__init__()
+        self.app_name = app_name
+        self.app_id = app_id
+        self.gestor = gestor
+        self._cancelar = False
+
+    def run(self):
+        if self._cancelar:
+            self.cancelado.emit("Desinstalación cancelada antes de comenzar.")
+            return
+
+        self.progreso.emit(f"Desinstalando '{self.app_name}'...")
+
+        try:
+            if self.gestor == "winget":
+                cmd = ["winget", "uninstall", "--id", self.app_id, "-e"]
+                subprocess.run(cmd, check=True)
+            else:
+                cmd = ["choco", "uninstall", self.app_id, "-y", "--accept-license", "--no-progress"]
+                subprocess.run(cmd, check=True, shell=True)
+
+            if self._cancelar:
+                self.cancelado.emit(f"Desinstalación de '{self.app_name}' cancelada.")
+                return
+
+            self.progreso.emit(f"'{self.app_name}' desinstalado correctamente.")
+        except subprocess.CalledProcessError as e:
+            self.progreso.emit(f"Error al desinstalar '{self.app_name}': {e}")
+        self.finalizado.emit()
+
+    def cancelar(self):
+        self._cancelar = True
+
+class UpdateSingleThread(QThread):
+    progreso = pyqtSignal(str)
+    finalizado = pyqtSignal()
+    cancelado = pyqtSignal(str)
+
+    def __init__(self, app_name, app_id, gestor):
+        super().__init__()
+        self.app_name = app_name
+        self.app_id = app_id
+        self.gestor = gestor
+        self._cancelar = False
+
+    def run(self):
+        if self._cancelar:
+            self.cancelado.emit("Actualización cancelada antes de comenzar.")
+            return
+
+        self.progreso.emit(f"Actualizando '{self.app_name}'...")
+
+        try:
+            if self.gestor == "winget":
+                cmd = ["winget", "upgrade", "--id", self.app_id, "-e", "--accept-package-agreements", "--accept-source-agreements"]
+                subprocess.run(cmd, check=True)
+            else:
+                cmd = ["choco", "upgrade", self.app_id, "-y", "--accept-license", "--no-progress"]
+                subprocess.run(cmd, check=True, shell=True)
+
+            if self._cancelar:
+                self.cancelado.emit(f"Actualización de '{self.app_name}' cancelada.")
+                return
+
+            self.progreso.emit(f"'{self.app_name}' actualizado correctamente.")
+        except subprocess.CalledProcessError as e:
+            self.progreso.emit(f"Error al actualizar '{self.app_name}': {e}")
+        self.finalizado.emit()
+
+    def cancelar(self):
+        self._cancelar = True
+
+class UpdateAllThread(QThread):
+    progreso = pyqtSignal(str)
+    finalizado = pyqtSignal()
+    cancelado = pyqtSignal(str)
+
+    def __init__(self, gestor):
+        super().__init__()
+        self.gestor = gestor
+        self._cancelar = False
+
+    def run(self):
+        if self._cancelar:
+            self.cancelado.emit("Actualización cancelada antes de comenzar.")
+            return
+
+        self.progreso.emit("Buscando actualizaciones...")
+
+        try:
+            if self.gestor == "winget":
+                cmd = ["winget", "upgrade", "--all", "-e", "--accept-package-agreements", "--accept-source-agreements"]
+                subprocess.run(cmd, check=True)
+            else:
+                cmd = ["choco", "upgrade", "all", "-y", "--accept-license", "--no-progress"]
+                subprocess.run(cmd, check=True, shell=True)
+
+            if self._cancelar:
+                self.cancelado.emit("Actualización cancelada por el usuario.")
+                return
+
+            self.progreso.emit("Todas las aplicaciones actualizadas correctamente.")
+        except subprocess.CalledProcessError as e:
+            self.progreso.emit(f"Error al actualizar: {e}")
+        self.finalizado.emit()
+
+    def cancelar(self):
+        self._cancelar = True
+
+
+if __name__ == "__main__":
+    app = QApplication([])
+    window = PackageApp()
+    window.show()
+    app.exec()

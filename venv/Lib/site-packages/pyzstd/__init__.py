@@ -1,10 +1,60 @@
 try:
     # Import C implementation
-    from .c import *
+    from ._c import (
+        CParameter,
+        DParameter,
+        EndlessZstdDecompressor,
+        PYZSTD_CONFIG,
+        RichMemZstdCompressor,
+        Strategy,
+        ZstdCompressor,
+        ZstdDecompressor,
+        ZstdDict,
+        ZstdError,
+        ZstdFileReader as _ZstdFileReader,
+        ZstdFileWriter as _ZstdFileWriter,
+        _ZSTD_CStreamSizes,
+        _ZSTD_DStreamSizes,
+        _finalize_dict,
+        _train_dict,
+        compress_stream as _compress_stream,
+        compressionLevel_values,
+        decompress,
+        decompress_stream as _decompress_stream,
+        get_frame_info,
+        get_frame_size,
+        zstd_version,
+        zstd_version_info
+    )
 except ImportError:
     try:
         # Import CFFI implementation
-        from .cffi import *
+        from ._cffi import (
+            CParameter,
+            DParameter,
+            EndlessZstdDecompressor,
+            PYZSTD_CONFIG,
+            RichMemZstdCompressor,
+            Strategy,
+            ZstdCompressor,
+            ZstdDecompressor,
+            ZstdDict,
+            ZstdError,
+            ZstdFileReader as _ZstdFileReader,
+            ZstdFileWriter as _ZstdFileWriter,
+            _ZSTD_CStreamSizes,
+            _ZSTD_DStreamSizes,
+            _finalize_dict,
+            _train_dict,
+            compress_stream as _compress_stream,
+            compressionLevel_values,
+            decompress,
+            decompress_stream as _decompress_stream,
+            get_frame_info,
+            get_frame_size,
+            zstd_version,
+            zstd_version_info
+        )
     except ImportError:
         raise ImportError(
             "\n\npyzstd module: Can't import compiled .so/.pyd file.\n"
@@ -14,10 +64,18 @@ except ImportError:
             "   that has libzstd.dll should be added by os.add_dll_directory() function.\n"
             "2, Please install pyzstd module through pip, to ensure that compiled\n"
             "   .so/.pyd file matches the architecture/OS/Python.\n")
-from .zstdfile import *
-from .seekable_zstdfile import *
+from ._zstdfile import ZstdFile, open
+from ._seekable_zstdfile import SeekableFormatError, SeekableZstdFile
 
-__version__ = '0.16.2'
+from functools import wraps
+
+try:
+    from warnings import deprecated
+except ImportError:
+    from typing_extensions import deprecated
+
+
+__version__ = '0.17.0'
 
 __doc__ = '''\
 Python bindings to Zstandard (zstd) compression library, the API style is
@@ -173,3 +231,14 @@ def finalize_dict(zstd_dict, samples, dict_size, level):
                                   dict_size, level)
 
     return ZstdDict(dict_content)
+
+
+@wraps(_compress_stream)
+@deprecated("See https://pyzstd.readthedocs.io/en/stable/deprecated.html for alternatives to pyzstd.compress_stream")
+def compress_stream(*args, **kwargs):
+    return _compress_stream(*args, **kwargs)
+
+@wraps(_decompress_stream)
+@deprecated("See https://pyzstd.readthedocs.io/en/stable/deprecated.html for alternatives to pyzstd.decompress_stream")
+def decompress_stream(*args, **kwargs):
+    return _decompress_stream(*args, **kwargs)
