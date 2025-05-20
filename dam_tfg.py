@@ -1,14 +1,5 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-import sys
-=======
 
 import os
->>>>>>> 56df096543f677af7b908f59d2e99467b2c41b5d
-=======
-
-import os
->>>>>>> 56df096543f677af7b908f59d2e99467b2c41b5d
 import platform
 import sys
 import psutil
@@ -177,12 +168,7 @@ class SystemInfoApp(QMainWindow):
         # # Página de Backups
         self.backups_page = BackupApp()
         self.stacked_widget.addWidget(self.backups_page)
-        
-      
 
-
-       
-        
 
     def load_system_info(self):
         """Carga y procesa la información del sistema"""
@@ -353,13 +339,4 @@ if __name__ == "__main__":
     
     window = SystemInfoApp()
     window.show()
-<<<<<<< HEAD
-<<<<<<< HEAD
     app.exec()
-
-=======
-    app.exec()
->>>>>>> 56df096543f677af7b908f59d2e99467b2c41b5d
-=======
-    app.exec()
->>>>>>> 56df096543f677af7b908f59d2e99467b2c41b5d
