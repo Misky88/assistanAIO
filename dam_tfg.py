@@ -336,7 +336,7 @@ class SystemInfoApp(QMainWindow):
 
     def update_realtime_stats(self):
         """Actualiza las estadísticas en tiempo real"""
-        self.cpu_usage.setText(f"CPU: {psutil.cpu_percent()}%")
+        self.cpu_usage.setText(f"CPU: {psutil.cpu_percent()}%") 
         mem = psutil.virtual_memory()
         self.mem_usage.setText(f"RAM: {mem.percent}%")
 
@@ -353,13 +353,4 @@ if __name__ == "__main__":
     
     window = SystemInfoApp()
     window.show()
-<<<<<<< HEAD
-<<<<<<< HEAD
     app.exec()
-
-=======
-    app.exec()
->>>>>>> 56df096543f677af7b908f59d2e99467b2c41b5d
-=======
-    app.exec()
->>>>>>> 56df096543f677af7b908f59d2e99467b2c41b5d
