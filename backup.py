@@ -34,15 +34,18 @@ def upload_to_backblaze(file_path: str):
     except Exception as e:
         raise Exception(f"Error en subida a B2: {str(e)}")
 
-def compress_and_upload(files: List[str], password: str = None, output_name: str = "backup") -> str:
-    """Ejecuta todo el proceso de backup."""
-    # Asegurarse de que el nombre del archivo tenga la extensión .7z
+def compress_and_upload(files: List[str], password: str = None, output_name: str = "backup", part_size: int = None) -> str:
+    """Ejecuta todo el proceso de backup con compresión opcionalmente dividida."""
     if not output_name.endswith(".7z"):
         output_name += ".7z"
-    
+
     output_path = output_name
     compress_files(output_path, files, password)
+
+    # Si part_size está definido, aquí podrías implementar la división (no está implementada aún)
+    # por ejemplo, usando una librería externa o dividiendo el archivo manualmente.
+
     upload_to_backblaze(output_path)
-    os.remove(output_path)  # Limpiar archivo local
+    os.remove(output_path)
     return f"Backup completado exitosamente: {output_name}"
 

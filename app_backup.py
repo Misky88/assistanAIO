@@ -421,11 +421,14 @@ class BackupApp(QWidget):
         self.backupButton.setEnabled(False)
 
         self.thread = BackupThread(
-            self.files, password, output_name,
-            part_size=part_size_bytes,
-            encrypt_metadata=self.metadataEncryptionCheckBox.isChecked(),
-            immutable=immutable,
-            immutability_duration=immutability_duration
+            files=self.files,
+            destination=self.destination,
+            part_size=self.part_size,
+            password=self.password,
+            encrypt_filenames=self.encrypt_filenames,
+            immutable=self.immutable,
+            immutability_days=self.immutability_days,
+            encryption_algorithm=self.encryption_algorithm
         )
         self.thread.progress.connect(self.update_progress)
         self.thread.finished.connect(self.backup_finished)
