@@ -5,14 +5,14 @@ import os
 import ctypes
 
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QLineEdit, QListWidget, QTextEdit, QFileDialog, QWidget, QTabWidget, QListWidgetItem,
-    QFrame, QSizePolicy, QSpacerItem, QComboBox, QDialog, QVBoxLayout, QLabel, QDialog, 
+    QApplication, QMainWindow, QHBoxLayout,
+    QLineEdit, QListWidget, QFileDialog, QWidget, QTabWidget, QListWidgetItem,
+    QFrame, QSizePolicy, QSpacerItem, QComboBox, QDialog,
     QVBoxLayout, QLabel, QPushButton, QTextEdit, QMessageBox,
 )
 from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal
 from PyQt6.QtGui import QFont, QGuiApplication
-from PyQt6.QtWidgets import QPlainTextEdit, QProgressBar
+from PyQt6.QtWidgets import QProgressBar
 
 # DEPENDENCIAS NECESARIAS PARA LA OPCION DE INSTALAR CHOCOLATEY AUTOMATICAMENTE
 # from PyQt6.QtWidgets import QProgressBar
@@ -20,7 +20,7 @@ from PyQt6.QtWidgets import QPlainTextEdit, QProgressBar
 # from PyQt6.QtGui import QIcon
 
 
-class PackageApp(QMainWindow):
+class PackageApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Package App Manager")
@@ -134,7 +134,7 @@ class PackageApp(QMainWindow):
         self.tabs.addTab(self.create_group_tab(), "📦 Agrupaciones")
         self.tabs.addTab(self.create_manage_tab(), "🛠️ Actualizar/Desinstalar")
         self.tabs.addTab(self.create_log_tab(), "📝 Historial")
-        self.setCentralWidget(self.tabs)
+        layout.addWidget(self.tabs)
 
 
     def create_title_label(self, text):
@@ -1451,7 +1451,7 @@ class ProgressDialog(QDialog):
             self.cancel_button.clicked.connect(self.cancelar_instalacion)
             layout.addWidget(self.cancel_button)
 
-        self.thread.progreso.connect(self.actualizar_mensaje)
+        self.thread.progreso.connect(self.actualizar_mensaje) # type: ignore
         self.thread.finalizado.connect(self.finalizar_y_notificar)
         self.thread.cancelado.connect(self.actualizar_mensaje)
 
@@ -1535,6 +1535,7 @@ class InstallGroupThread(QThread):
     progreso = pyqtSignal(str)
     finalizado = pyqtSignal()
     cancelado = pyqtSignal(str)
+
 
     def __init__(self, group_dict, package_manager):
         super().__init__()

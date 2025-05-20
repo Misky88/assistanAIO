@@ -1,16 +1,17 @@
 
-import sys
-import platform
-import psutil
 import os
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, QWidget,
-                             QVBoxLayout, QHBoxLayout, QLabel, QGridLayout, 
-                             QFrame, QStackedWidget, QTabWidget, QLineEdit, QListWidget)
-from PyQt6.QtGui import QIcon, QFont
+import platform
+import sys
+import psutil
 from PyQt6.QtCore import QSize, Qt, QTimer
-from comandowin import ComandaWin  # Importar la clase ComandaWin
-from chocolatey import ChocolateyApp
+from PyQt6.QtGui import QIcon, QFont
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, QWidget,
+                             QVBoxLayout, QHBoxLayout, QLabel, QFrame, QStackedWidget)
+
 from app_backup import BackupApp
+from chocolatey import PackageApp
+from comandowin import ComandaWin
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 class SystemInfoApp(QMainWindow):
@@ -157,7 +158,7 @@ class SystemInfoApp(QMainWindow):
         self.stacked_widget.addWidget(self.system_info_page)
         
         # Página de Aplicaciones (Aplicaciones)
-        self.applications_page = ChocolateyApp()
+        self.applications_page = PackageApp()
         self.stacked_widget.addWidget(self.applications_page)
         
         # Página de Comandos Windows
@@ -167,12 +168,7 @@ class SystemInfoApp(QMainWindow):
         # # Página de Backups
         self.backups_page = BackupApp()
         self.stacked_widget.addWidget(self.backups_page)
-        
-      
 
-
-       
-        
 
     def load_system_info(self):
         """Carga y procesa la información del sistema"""
@@ -201,18 +197,17 @@ class SystemInfoApp(QMainWindow):
             }
 
     def create_info_row(self, title, value):
-        """Crea una fila de información con estilos"""
         widget = QWidget()
         layout = QHBoxLayout(widget)
         layout.setContentsMargins(10, 5, 10, 5)
-        
+
         title_label = QLabel(title)
         title_label.setStyleSheet("font-weight: bold; color: #34495e;")
         title_label.setFixedWidth(200)
-        
+
         value_label = QLabel(str(value))
         value_label.setStyleSheet("color: #7f8c8d;")
-        
+
         layout.addWidget(title_label)
         layout.addWidget(value_label)
         return widget
@@ -314,8 +309,7 @@ class SystemInfoApp(QMainWindow):
         self.stacked_widget.setCurrentWidget(self.comanda_win_page)
 
     def show_chocolatey_ui(self):
-        """Muestra la vista de Chocolatey"""
-        self.stacked_widget.setCurrentWidget(self.chocolatey_page)
+        self.stacked_widget.setCurrentWidget(self.applications_page)
 
     def show_applications_ui(self):
         """Muestra la vista de Aplicaciones"""
@@ -345,3 +339,4 @@ if __name__ == "__main__":
     
     window = SystemInfoApp()
     window.show()
+    app.exec()
