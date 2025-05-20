@@ -1,14 +1,5 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 import sys
-=======
-
 import os
->>>>>>> 56df096543f677af7b908f59d2e99467b2c41b5d
-=======
-
-import os
->>>>>>> 56df096543f677af7b908f59d2e99467b2c41b5d
 import platform
 import sys
 import psutil
