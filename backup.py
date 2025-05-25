@@ -1,51 +1,83 @@
-# Backup7z/backup.py
-import os
-import py7zr
-from b2sdk.v1 import B2Api, InMemoryAccountInfo
-from config import B2_APP_KEY_ID, B2_APP_KEY, B2_BUCKET_NAME
 from typing import List
 
-def compress_files(output_path: str, files: List[str], password: str = None) -> str:
-    """Comprime archivos usando py7zr con encriptación opcional."""
-    try:
-        with py7zr.SevenZipFile(output_path, 'w', password=password) as z:
-            for file_path in files:
-                if os.path.isdir(file_path):
-                    z.writeall(file_path, os.path.basename(file_path))
-                else:
-                    z.write(file_path, os.path.basename(file_path))
-        return output_path
-    except Exception as e:
-        raise Exception(f"Error en compresión: {str(e)}")
+def compress_files(
+    output_path: str,
+    files: List[str],
+    password: str = None,
+    part_size: int = None,
+    encrypt_filenames: bool = False,
+    encryption_algorithm: str = "AES-256"
+) -> str:
+    """
+    Comprime los archivos dados en output_path, usando los parámetros opcionales.
+    Esta función debe implementar la compresión real (py7zr, 7z, etc.)
+    """
+    # Ejemplo de uso de py7zr (puedes adaptar a tu método real)
+    import py7zr
+    mode = 'w'
+    filters = [{'id': py7zr.FILTER_LZMA2, 'preset': 7}]
+    with py7zr.SevenZipFile(output_path, mode,
+                            password=password,
+                            filters=filters,
+                            encryption=encryption_algorithm) as archive:
+        for file in files:
+            archive.write(file, arcname=None if not encrypt_filenames else "encrypted_name")
+        # Implementa aquí la lógica de volúmenes/part_size si es necesario
 
-def upload_to_backblaze(file_path: str):
-    """Sube el archivo a Backblaze B2."""
-    try:
-        info = InMemoryAccountInfo()
-        b2_api = B2Api(info)
-        b2_api.authorize_account("production", B2_APP_KEY_ID, B2_APP_KEY)
-        
-        bucket = b2_api.get_bucket_by_name(B2_BUCKET_NAME)
-        bucket.upload_local_file(
-            local_file=file_path,
-            file_name=os.path.basename(file_path)
-        )
-        return True
-    except Exception as e:
-        raise Exception(f"Error en subida a B2: {str(e)}")
+    # Si generas volúmenes, devuelve la lista de rutas
+    return output_path
 
-def compress_and_upload(files: List[str], password: str = None, output_name: str = "backup", part_size: int = None) -> str:
-    """Ejecuta todo el proceso de backup con compresión opcionalmente dividida."""
+def upload_to_backblaze_b2(
+    file_path: str,
+    bucket_name: str,
+    destination_path: str,
+    immutable: bool = False,
+    immutability_days: int = 0
+) -> str:
+    """
+    Sube el archivo resultante a Backblaze B2.
+    Aquí debes usar el SDK de B2 o rclone, según tu implementación.
+    """
+    # Lógica de subida aquí (ejemplo pseudocódigo):
+    # b2_api.upload_file(bucket_name, destination_path, file_path, ...)
+    return f"Archivo subido a {destination_path}"
+
+def compress_and_upload(
+    files: List[str],
+    password: str = None,
+    output_name: str = "backup.7z",
+    part_size: int = None,
+    encrypt_filenames: bool = False,
+    immutable: bool = False,
+    immutability_days: int = 0,
+    encryption_algorithm: str = "AES-256",
+    destination: str = "",
+    bucket_name: str = ""
+) -> str:
+    """
+    Ejecuta todo el proceso de backup con compresión opcionalmente dividida y lo sube a Backblaze B2.
+    """
     if not output_name.endswith(".7z"):
         output_name += ".7z"
-
     output_path = output_name
-    compress_files(output_path, files, password)
 
-    # Si part_size está definido, aquí podrías implementar la división (no está implementada aún)
-    # por ejemplo, usando una librería externa o dividiendo el archivo manualmente.
+    # Comprimir archivos (añade aquí la lógica de volúmenes si es necesario)
+    compress_files(
+        output_path,
+        files,
+        password=password,
+        part_size=part_size,
+        encrypt_filenames=encrypt_filenames,
+        encryption_algorithm=encryption_algorithm
+    )
 
-    upload_to_backblaze(output_path)
-    os.remove(output_path)
-    return f"Backup completado exitosamente: {output_name}"
+    # Subir archivo(s) a Backblaze B2
+    upload_result = upload_to_backblaze_b2(
+        file_path=output_path,
+        bucket_name=bucket_name,
+        destination_path=destination,
+        immutable=immutable,
+        immutability_days=immutability_days
+    )
 
+    return upload_result

@@ -419,7 +419,6 @@ class BackupApp(QWidget):
 
         self.progress.setVisible(True)
         self.backupButton.setEnabled(False)
-
         self.thread = BackupThread(
             files=self.files,
             destination=self.destination,

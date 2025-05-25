@@ -169,12 +169,6 @@ class SystemInfoApp(QMainWindow):
         self.backups_page = BackupApp()
         self.stacked_widget.addWidget(self.backups_page)
         
-      
-
-
-       
-        
-
     def load_system_info(self):
         """Carga y procesa la información del sistema"""
         try:

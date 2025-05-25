@@ -6,16 +6,21 @@ class BackupThread(QThread):
     progress = pyqtSignal(int)
     finished = pyqtSignal(bool, str)
 
-    def __init__(self, files, password=None, output_name="backup.7z", part_size=None, encrypt_metadata=False, 
-                immutable=False, immutability_duration=None):
+    def __init__(
+        self, files, destination, part_size=None, password=None,
+        encrypt_filenames=False, immutable=False, immutability_days=0,
+        encryption_algorithm="AES-256", output_name="backup.7z"
+    ):
         super().__init__()
         self.files = files
-        self.password = password
-        self.output_name = output_name
+        self.destination = destination
         self.part_size = part_size
-        self.encrypt_metadata = encrypt_metadata
+        self.password = password
+        self.encrypt_filenames = encrypt_filenames
         self.immutable = immutable
-        self.immutability_duration = immutability_duration
+        self.immutability_days = immutability_days
+        self.encryption_algorithm = encryption_algorithm
+        self.output_name = output_name
 
 
     def run(self):
