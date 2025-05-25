@@ -343,7 +343,166 @@ class BackupApp(QWidget):
     def iniciar_backup_programado(self):
         self.start_backup()
 
-    # ... Resto de métodos de la clase igual que tienes (update_progress, backup_finished, update_preview, etc.) ...
+    def update_preview(self):
+        """Actualiza la vista previa del nombre completo del archivo comprimido."""
+        name = self.outputNameField.text().strip()
+        if not name:
+            name = "backup"
+        self.previewLabel.setText(f"Vista previa: {name}.7z")
+    
+    def reset_name_tab(self):
+        """Restablece los valores de los campos en la pestaña 'Nombre de la Copia'."""
+        self.outputNameField.clear()
+        self.descriptionField.clear()
+        self.backupTypeCombo.setCurrentIndex(0)  # Selecciona "Respaldo Completo"
+        self.update_preview()
+    
+    def select_files(self):
+        """Permite al usuario seleccionar archivos para la copia de seguridad."""
+        files, _ = QFileDialog.getOpenFileNames(
+            self, "Seleccionar Archivos", "", "Todos los archivos (*)"
+        )
+        if files:
+            self.files.extend(files)
+            self.update_file_list()
+
+    def select_folders(self):
+        """Permite al usuario seleccionar carpetas para la copia de seguridad."""
+        folder = QFileDialog.getExistingDirectory(self, "Seleccionar Carpeta")
+        if folder:
+            self.files.append(folder)
+            self.update_file_list()
+
+    def update_file_list(self):
+        """Actualiza la lista de archivos y carpetas seleccionados en la interfaz."""
+        self.file_list.clear()
+        self.file_list.addItems([os.path.basename(f) for f in self.files])
+
+    def remove_selected_item(self):
+        """Elimina el elemento seleccionado de la lista de archivos y carpetas."""
+        selected_item = self.file_list.currentItem()
+        if selected_item:
+            item_text = selected_item.text()
+            for file in self.files:
+                if os.path.basename(file) == item_text:
+                    self.files.remove(file)
+                    break
+            self.update_file_list()
+
+    def validate_password(self):
+        """Valida la fortaleza de la contraseña ingresada."""
+        password = self.passwordField.text()
+        has_digit = any(c.isdigit() for c in password)
+        has_upper = any(c.isupper() for c in password)
+        has_lower = any(c.islower() for c in password)
+        has_special = any(not c.isalnum() for c in password)
+
+        if len(password) < 8:
+            self.passwordStrengthLabel.setText("Fortaleza: Débil")
+            self.passwordStrengthLabel.setStyleSheet("color: red;")
+        elif len(password) >= 12 and has_digit and has_upper and has_lower and has_special:
+            self.passwordStrengthLabel.setText("Fortaleza: Fuerte")
+            self.passwordStrengthLabel.setStyleSheet("color: green;")
+        elif len(password) >= 8:
+            self.passwordStrengthLabel.setText("Fortaleza: Media")
+            self.passwordStrengthLabel.setStyleSheet("color: orange;")
+        else:
+            self.passwordStrengthLabel.setText("Fortaleza: Débil")
+            self.passwordStrengthLabel.setStyleSheet("color: red;")
+
+    def toggle_password_visibility(self):
+        """Alterna entre mostrar y ocultar la contraseña."""
+        if self.togglePasswordButton.isChecked():
+            self.passwordField.setEchoMode(QLineEdit.EchoMode.Normal)
+            self.togglePasswordButton.setText("Ocultar")
+        else:
+            self.passwordField.setEchoMode(QLineEdit.EchoMode.Password)
+            self.togglePasswordButton.setText("Mostrar")
+
+    def generate_random_password(self):
+        """Genera una contraseña aleatoria y la establece en el campo de contraseña."""
+        import random
+        import string
+
+        length = 12
+        characters = string.ascii_letters + string.digits + string.punctuation
+        password = ''.join(random.choice(characters) for i in range(length))
+        self.passwordField.setText(password)
+
+    def update_security_preview(self):
+        """Actualiza la vista previa de las configuraciones de seguridad."""
+        if self.encryptCheckBox.isChecked():
+            algorithm = self.encryptionAlgorithmCombo.currentText()
+            self.securityPreviewLabel.setText(f"Vista previa de seguridad: Encriptación habilitada ({algorithm})")
+        else:
+            self.securityPreviewLabel.setText("Vista previa de seguridad: Encriptación deshabilitada")
+
+    def toggle_immutability_options(self):
+        """Habilita o deshabilita las opciones de tiempo de inmutabilidad según el estado del checkbox."""
+        is_checked = self.immutableBackupCheckBox.isChecked()
+        self.immutabilityTimeUnitCombo.setEnabled(is_checked)
+        self.immutabilityTimeValueCombo.setEnabled(is_checked)
+
+    def reset_name_tab(self):
+        """Restablece los valores de los campos en la pestaña 'Nombre de la Copia'."""
+        self.outputNameField.clear()
+        self.descriptionField.clear()
+        self.backupTypeCombo.setCurrentIndex(0)
+        self.update_preview()
+
+    def update_preview(self):
+        """Actualiza la vista previa del nombre completo del archivo comprimido."""
+        name = self.outputNameField.text().strip()
+        if not name:
+            name = "backup"
+        self.previewLabel.setText(f"Vista previa: {name}.7z")
+
+    def log_activity(self, message: str):
+        """Registra una actividad en el log de la interfaz."""
+        self.activityLog.addItem(message)
+        import logging
+        logging.info(message)
+
+    def update_progress(self, value):
+        self.progress.setValue(value)
+
+    def backup_finished(self, success, message):
+        self.progress.setVisible(False)
+        self.backupButton.setEnabled(True)
+        from PyQt6.QtWidgets import QMessageBox
+        if success:
+            QMessageBox.information(self, "Éxito", message)
+        else:
+            QMessageBox.critical(self, "Error", message)
+
+    def export_schedule(self):
+        """Exporta la configuración de programación a un archivo JSON."""
+        file_path, _ = QFileDialog.getSaveFileName(self, "Exportar programación", "", "JSON Files (*.json)")
+        if file_path:
+            schedule_data = {
+                "enabled": True,  # Modifica según tu lógica
+                "frequency": self.scheduleTypeCombo.currentText(),
+                "custom_date": self.dateTimePicker.dateTime().toString(),
+            }
+            with open(file_path, 'w') as file:
+                import json
+                json.dump(schedule_data, file)
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.information(self, "Éxito", "Programación exportada con éxito.")
+
+    def import_schedule(self):
+        """Importa la configuración de programación desde un archivo JSON."""
+        file_path, _ = QFileDialog.getOpenFileName(self, "Importar programación", "", "JSON Files (*.json)")
+        if file_path:
+            with open(file_path, 'r') as file:
+                import json
+                schedule_data = json.load(file)
+            # Actualiza los campos según tu lógica
+            self.scheduleTypeCombo.setCurrentText(schedule_data["frequency"])
+            self.dateTimePicker.setDateTime(QDateTime.fromString(schedule_data["custom_date"]))
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.information(self, "Éxito", "Programación importada con éxito.")
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

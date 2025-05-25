@@ -16,24 +16,23 @@ def compress_files(
         with py7zr.SevenZipFile(
             output_path,
             'w',
-            password=password,
+            password=password if password else None,
             filters=[{"id": py7zr.FILTER_LZMA2}],
+            encrypt_header=encrypt_filenames  # <-- AÑADE ESTO
         ) as z:
             for file_path in files:
                 if os.path.isdir(file_path):
                     z.writeall(file_path, os.path.basename(file_path))
                 else:
                     arcname = os.path.basename(file_path)
-                    if encrypt_filenames:
-                        arcname = "encrypted_" + arcname  # Personaliza si lo deseas
                     z.write(file_path, arcname)
-        # Particionar si part_size está indicado
         parts = [output_path]
         if part_size:
             parts = split_file(output_path, part_size)
         return parts
     except Exception as e:
         raise Exception(f"Error en compresión: {str(e)}")
+
 
 def split_file(file_path, part_size):
     parts = []
@@ -58,7 +57,6 @@ def upload_to_backblaze(file_path: str, immutable=False, immutability_duration=N
         b2_api.authorize_account("production", B2_APP_KEY_ID, B2_APP_KEY)
         bucket = b2_api.get_bucket_by_name(B2_BUCKET_NAME)
         extra_args = {}
-        # Configuración avanzada de inmutabilidad aquí si tu bucket lo permite
         bucket.upload_local_file(
             local_file=file_path,
             file_name=os.path.basename(file_path),
@@ -76,7 +74,8 @@ def compress_and_upload(
     encrypt_filenames=False,
     immutable=False,
     immutability_duration=None,
-    encryption_algorithm="AES256"
+    encryption_algorithm="AES256",
+    encrypt_with_aes=False  # <--- NUEVO
 ):
     if not output_name.endswith(".7z"):
         output_name += ".7z"
@@ -87,7 +86,22 @@ def compress_and_upload(
         encrypt_filenames=encrypt_filenames,
         encryption_algorithm=encryption_algorithm
     )
+
+    # Nuevo: Cifrar con AES si se pide
+    if encrypt_with_aes:
+        new_parts = []
+        for part in parts:
+            encrypted_part = part + '.enc'
+            encrypt_file_with_aes(part, encrypted_part)  # Guardará la clave en .enc.key
+            os.remove(part)
+            new_parts.append(encrypted_part)
+        parts = new_parts
+
     for part in parts:
         upload_to_backblaze(part, immutable=immutable, immutability_duration=immutability_duration)
         os.remove(part)
     return f"Backup completado exitosamente: {output_name} {'(' + str(len(parts)) + ' partes)' if len(parts)>1 else ''}"
+
+def descomprimir_archivo(ruta_7z, carpeta_destino, password):
+    with py7zr.SevenZipFile(ruta_7z, 'r', password=password) as z:
+        z.extractall(carpeta_destino)

@@ -18,6 +18,7 @@ class BackupThread(QThread):
         encryption_algorithm="AES256"
     ):
         super().__init__()
+        print(">>> BACKUPTHREAD USADO:", __file__)
         self.files = files
         self.password = password
         self.output_name = output_name
