@@ -1,3 +1,7 @@
+import os
+import py7zr
+from b2sdk.v1 import B2Api, InMemoryAccountInfo
+from config import B2_APP_KEY_ID, B2_APP_KEY, B2_BUCKET_NAME
 from typing import List
 
 def compress_files(
@@ -6,78 +10,84 @@ def compress_files(
     password: str = None,
     part_size: int = None,
     encrypt_filenames: bool = False,
-    encryption_algorithm: str = "AES-256"
-) -> str:
-    """
-    Comprime los archivos dados en output_path, usando los parámetros opcionales.
-    Esta función debe implementar la compresión real (py7zr, 7z, etc.)
-    """
-    # Ejemplo de uso de py7zr (puedes adaptar a tu método real)
-    import py7zr
-    mode = 'w'
-    filters = [{'id': py7zr.FILTER_LZMA2, 'preset': 7}]
-    with py7zr.SevenZipFile(output_path, mode,
-                            password=password,
-                            filters=filters,
-                            encryption=encryption_algorithm) as archive:
-        for file in files:
-            archive.write(file, arcname=None if not encrypt_filenames else "encrypted_name")
-        # Implementa aquí la lógica de volúmenes/part_size si es necesario
+    encryption_algorithm: str = "AES256"
+) -> list:
+    try:
+        with py7zr.SevenZipFile(
+            output_path,
+            'w',
+            password=password,
+            filters=[{"id": py7zr.FILTER_LZMA2}],
+        ) as z:
+            for file_path in files:
+                if os.path.isdir(file_path):
+                    z.writeall(file_path, os.path.basename(file_path))
+                else:
+                    arcname = os.path.basename(file_path)
+                    if encrypt_filenames:
+                        arcname = "encrypted_" + arcname  # Personaliza si lo deseas
+                    z.write(file_path, arcname)
+        # Particionar si part_size está indicado
+        parts = [output_path]
+        if part_size:
+            parts = split_file(output_path, part_size)
+        return parts
+    except Exception as e:
+        raise Exception(f"Error en compresión: {str(e)}")
 
-    # Si generas volúmenes, devuelve la lista de rutas
-    return output_path
+def split_file(file_path, part_size):
+    parts = []
+    with open(file_path, "rb") as f:
+        idx = 1
+        while True:
+            chunk = f.read(part_size)
+            if not chunk:
+                break
+            part_file = f"{file_path}.part{idx:03d}"
+            with open(part_file, "wb") as pf:
+                pf.write(chunk)
+            parts.append(part_file)
+            idx += 1
+    os.remove(file_path)
+    return parts
 
-def upload_to_backblaze_b2(
-    file_path: str,
-    bucket_name: str,
-    destination_path: str,
-    immutable: bool = False,
-    immutability_days: int = 0
-) -> str:
-    """
-    Sube el archivo resultante a Backblaze B2.
-    Aquí debes usar el SDK de B2 o rclone, según tu implementación.
-    """
-    # Lógica de subida aquí (ejemplo pseudocódigo):
-    # b2_api.upload_file(bucket_name, destination_path, file_path, ...)
-    return f"Archivo subido a {destination_path}"
+def upload_to_backblaze(file_path: str, immutable=False, immutability_duration=None):
+    try:
+        info = InMemoryAccountInfo()
+        b2_api = B2Api(info)
+        b2_api.authorize_account("production", B2_APP_KEY_ID, B2_APP_KEY)
+        bucket = b2_api.get_bucket_by_name(B2_BUCKET_NAME)
+        extra_args = {}
+        # Configuración avanzada de inmutabilidad aquí si tu bucket lo permite
+        bucket.upload_local_file(
+            local_file=file_path,
+            file_name=os.path.basename(file_path),
+            **extra_args
+        )
+        return True
+    except Exception as e:
+        raise Exception(f"Error en subida a B2: {str(e)}")
 
 def compress_and_upload(
-    files: List[str],
-    password: str = None,
-    output_name: str = "backup.7z",
-    part_size: int = None,
-    encrypt_filenames: bool = False,
-    immutable: bool = False,
-    immutability_days: int = 0,
-    encryption_algorithm: str = "AES-256",
-    destination: str = "",
-    bucket_name: str = ""
-) -> str:
-    """
-    Ejecuta todo el proceso de backup con compresión opcionalmente dividida y lo sube a Backblaze B2.
-    """
+    files,
+    password=None,
+    output_name="backup",
+    part_size=None,
+    encrypt_filenames=False,
+    immutable=False,
+    immutability_duration=None,
+    encryption_algorithm="AES256"
+):
     if not output_name.endswith(".7z"):
         output_name += ".7z"
     output_path = output_name
-
-    # Comprimir archivos (añade aquí la lógica de volúmenes si es necesario)
-    compress_files(
-        output_path,
-        files,
-        password=password,
+    parts = compress_files(
+        output_path, files, password,
         part_size=part_size,
         encrypt_filenames=encrypt_filenames,
         encryption_algorithm=encryption_algorithm
     )
-
-    # Subir archivo(s) a Backblaze B2
-    upload_result = upload_to_backblaze_b2(
-        file_path=output_path,
-        bucket_name=bucket_name,
-        destination_path=destination,
-        immutable=immutable,
-        immutability_days=immutability_days
-    )
-
-    return upload_result
+    for part in parts:
+        upload_to_backblaze(part, immutable=immutable, immutability_duration=immutability_duration)
+        os.remove(part)
+    return f"Backup completado exitosamente: {output_name} {'(' + str(len(parts)) + ' partes)' if len(parts)>1 else ''}"

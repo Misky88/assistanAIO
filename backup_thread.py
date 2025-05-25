@@ -7,33 +7,40 @@ class BackupThread(QThread):
     finished = pyqtSignal(bool, str)
 
     def __init__(
-        self, files, destination, part_size=None, password=None,
-        encrypt_filenames=False, immutable=False, immutability_days=0,
-        encryption_algorithm="AES-256", output_name="backup.7z"
+        self,
+        files,
+        password=None,
+        output_name="backup",
+        part_size=None,
+        encrypt_metadata=False,
+        immutable=False,
+        immutability_duration=None,
+        encryption_algorithm="AES256"
     ):
         super().__init__()
         self.files = files
-        self.destination = destination
-        self.part_size = part_size
         self.password = password
-        self.encrypt_filenames = encrypt_filenames
-        self.immutable = immutable
-        self.immutability_days = immutability_days
-        self.encryption_algorithm = encryption_algorithm
         self.output_name = output_name
-
+        self.part_size = part_size
+        self.encrypt_metadata = encrypt_metadata
+        self.immutable = immutable
+        self.immutability_duration = immutability_duration
+        self.encryption_algorithm = encryption_algorithm
 
     def run(self):
         try:
             for i in range(1, 101):
-                time.sleep(0.05)
+                time.sleep(0.02)
                 self.progress.emit(i)
-
             result = compress_and_upload(
                 self.files,
                 self.password,
-                output_name=self.output_name,
-                part_size=self.part_size
+                self.output_name,
+                self.part_size,
+                self.encrypt_metadata,
+                self.immutable,
+                self.immutability_duration,
+                self.encryption_algorithm
             )
             self.finished.emit(True, result)
         except Exception as e:
