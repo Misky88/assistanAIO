@@ -28,13 +28,13 @@ prompt APPLICATION 110 - Assistant AIO (Clientes)
 -- Application Export:
 --   Application:     110
 --   Name:            Assistant AIO (Clientes)
---   Date and Time:   18:48 Domingo Mayo 18, 2025
+--   Date and Time:   19:22 Domingo Mayo 25, 2025
 --   Exported By:     ADMIN
 --   Flashback:       0
 --   Export Type:     Application Export
 --     Pages:                      9
---       Items:                   32
---       Processes:               19
+--       Items:                   35
+--       Processes:               22
 --       Regions:                 11
 --       Buttons:                 19
 --     Shared Components:
@@ -118,7 +118,7 @@ wwv_flow_api.create_flow(
 ,p_substitution_string_01=>'APP_NAME'
 ,p_substitution_value_01=>'Assistant AIO'
 ,p_last_updated_by=>'ADMIN'
-,p_last_upd_yyyymmddhh24miss=>'20250518184721'
+,p_last_upd_yyyymmddhh24miss=>'20250525192032'
 ,p_file_prefix => nvl(wwv_flow_application_install.get_static_app_file_prefix,'')
 ,p_files_version=>3
 ,p_ui_type_name => null
@@ -10930,8 +10930,8 @@ wwv_flow_api.create_page(
 ,p_step_title=>'Assistant AIO'
 ,p_autocomplete_on_off=>'OFF'
 ,p_page_template_options=>'#DEFAULT#'
-,p_last_updated_by=>'ADMIN'
-,p_last_upd_yyyymmddhh24miss=>'20250518184721'
+,p_last_updated_by=>'MARIO@MARIO.COM'
+,p_last_upd_yyyymmddhh24miss=>'20250525184817'
 );
 wwv_flow_api.create_page_plug(
  p_id=>wwv_flow_api.id(6560186570509063)
@@ -10958,10 +10958,22 @@ wwv_flow_api.create_page_plug(
 ,p_plug_source=>wwv_flow_string.join(wwv_flow_t_varchar2(
 'select EMP_ID,',
 '       EMP_NOMBRE,',
-'       EMP_USADO,',
-'       EMP_CAPACIDAD,',
-'       (EMP_USADO/EMP_CAPACIDAD)*100 as Porcentaje,',
-'       EMP_ESTADO',
+'       (select nvl(sum(nvl(equ_usado,0)),0) || '' / '' || EMP_CAPACIDAD || '' GB''',
+'        from equipos',
+'        where equ_emp = EMP_ID) as USADO,',
+'       ((select nvl(sum(nvl(equ_usado,0)),0)',
+'        from equipos',
+'        where equ_emp = EMP_ID)/EMP_CAPACIDAD)*100 as Porcentaje,',
+'        CASE ',
+'            WHEN EXISTS (',
+'                select ''x'' from equipos',
+'                where equ_emp = emp_id',
+'                    and equ_estado is not null',
+'                    and upper(equ_estado) <> ''CORRECTO''',
+'            )',
+'            THEN ''ERROR''',
+'            ELSE ''CORRECTO''',
+'        END AS Estado',
 'from EMPRESAS',
 'where emp_cliente = :GLOBAL_USUARIO'))
 ,p_plug_source_type=>'NATIVE_IR'
@@ -11002,24 +11014,6 @@ wwv_flow_api.create_worksheet_column(
 ,p_column_type=>'STRING'
 );
 wwv_flow_api.create_worksheet_column(
- p_id=>wwv_flow_api.id(6569790777565209)
-,p_db_column_name=>'EMP_USADO'
-,p_display_order=>12
-,p_column_identifier=>'G'
-,p_column_label=>'Usado (GB)'
-,p_column_type=>'NUMBER'
-,p_column_alignment=>'CENTER'
-);
-wwv_flow_api.create_worksheet_column(
- p_id=>wwv_flow_api.id(6661796938696864)
-,p_db_column_name=>'EMP_CAPACIDAD'
-,p_display_order=>22
-,p_column_identifier=>'C'
-,p_column_label=>'Capacidad (GB)'
-,p_column_type=>'NUMBER'
-,p_column_alignment=>'CENTER'
-);
-wwv_flow_api.create_worksheet_column(
  p_id=>wwv_flow_api.id(6569971236565210)
 ,p_db_column_name=>'PORCENTAJE'
 ,p_display_order=>32
@@ -11031,13 +11025,20 @@ wwv_flow_api.create_worksheet_column(
 ,p_format_mask=>'PCT_GRAPH:::'
 );
 wwv_flow_api.create_worksheet_column(
- p_id=>wwv_flow_api.id(6662630188696864)
-,p_db_column_name=>'EMP_ESTADO'
+ p_id=>wwv_flow_api.id(3718613088097501)
+,p_db_column_name=>'USADO'
 ,p_display_order=>42
-,p_column_identifier=>'E'
+,p_column_identifier=>'I'
+,p_column_label=>'Usado'
+,p_column_type=>'STRING'
+);
+wwv_flow_api.create_worksheet_column(
+ p_id=>wwv_flow_api.id(3718722639097502)
+,p_db_column_name=>'ESTADO'
+,p_display_order=>52
+,p_column_identifier=>'J'
 ,p_column_label=>'Estado'
 ,p_column_type=>'STRING'
-,p_column_alignment=>'CENTER'
 );
 wwv_flow_api.create_worksheet_rpt(
  p_id=>wwv_flow_api.id(9814823675161301)
@@ -11046,7 +11047,7 @@ wwv_flow_api.create_worksheet_rpt(
 ,p_report_alias=>'31603'
 ,p_status=>'PUBLIC'
 ,p_is_default=>'Y'
-,p_report_columns=>'EMP_NOMBRE:EMP_USADO:EMP_CAPACIDAD:PORCENTAJE:EMP_ESTADO:'
+,p_report_columns=>'EMP_NOMBRE:USADO:PORCENTAJE:ESTADO:'
 );
 wwv_flow_api.create_page_button(
  p_id=>wwv_flow_api.id(6663451085696865)
@@ -11078,7 +11079,7 @@ wwv_flow_api.create_page(
 ,p_page_template_options=>'#DEFAULT#'
 ,p_protection_level=>'C'
 ,p_last_updated_by=>'ADMIN'
-,p_last_upd_yyyymmddhh24miss=>'20250518184707'
+,p_last_upd_yyyymmddhh24miss=>'20250525191509'
 );
 wwv_flow_api.create_page_plug(
  p_id=>wwv_flow_api.id(6630276012668951)
@@ -11109,8 +11110,11 @@ wwv_flow_api.create_page_plug(
 '       EQU_NOMBRE,',
 '       EQU_IP,',
 '       EQU_UBICACION,',
+'       nvl(EQU_USADO,0) || '' / '' || nvl(EQU_CAPACIDAD,:P5_EMP_CAPACIDAD) || '' GB'' as USADO,',
+'       nvl(EQU_USADO,0)/nvl(EQU_CAPACIDAD,:P5_EMP_CAPACIDAD)*100 as Porcentaje,',
 unistr('       decode(EQU_ACTIVO,''S'', ''S\00ED'', ''No'') as Activo,'),
-'       nvl(EQU_ESTADO,''CORRECTO'') as Estado',
+'       nvl(EQU_ESTADO,''CORRECTO'') as Estado,',
+'       EQU_LICENCIA',
 'from EQUIPOS',
 'where EQU_EMP = :P5_EMP_ID'))
 ,p_plug_source_type=>'NATIVE_IR'
@@ -11158,7 +11162,7 @@ wwv_flow_api.create_worksheet(
 ,p_report_list_mode=>'TABS'
 ,p_show_detail_link=>'C'
 ,p_download_formats=>'CSV:HTML:EMAIL:XLSX:PDF:RTF'
-,p_detail_link=>'f?p=&APP_ID.:6:&SESSION.::&DEBUG.:RP,:P6_EQU_ID,P6_EQU_EMP:\#EQU_ID#\,\#EQU_EMP#\'
+,p_detail_link=>'f?p=&APP_ID.:6:&SESSION.::&DEBUG.:RP,:P6_EQU_ID,P6_EQU_EMP,P6_EMP_CAPACIDAD:\#EQU_ID#\,\#EQU_EMP#\,&P5_EMP_CAPACIDAD.'
 ,p_detail_link_text=>'<span aria-label="Editar"><span class="fa fa-edit" aria-hidden="true" title="Editar"></span></span>'
 ,p_owner=>'ADMIN'
 ,p_internal_uid=>6447367972417353
@@ -11210,9 +11214,29 @@ wwv_flow_api.create_worksheet_column(
 ,p_column_alignment=>'CENTER'
 );
 wwv_flow_api.create_worksheet_column(
+ p_id=>wwv_flow_api.id(3718850454097503)
+,p_db_column_name=>'USADO'
+,p_display_order=>15
+,p_column_identifier=>'J'
+,p_column_label=>'Usado'
+,p_column_type=>'STRING'
+,p_column_alignment=>'CENTER'
+);
+wwv_flow_api.create_worksheet_column(
+ p_id=>wwv_flow_api.id(3718947453097504)
+,p_db_column_name=>'PORCENTAJE'
+,p_display_order=>25
+,p_column_identifier=>'K'
+,p_column_label=>'Porcentaje'
+,p_column_type=>'NUMBER'
+,p_display_text_as=>'WITHOUT_MODIFICATION'
+,p_column_alignment=>'CENTER'
+,p_format_mask=>'PCT_GRAPH:::'
+);
+wwv_flow_api.create_worksheet_column(
  p_id=>wwv_flow_api.id(6570342928565214)
 ,p_db_column_name=>'ACTIVO'
-,p_display_order=>15
+,p_display_order=>35
 ,p_column_identifier=>'H'
 ,p_column_label=>'Activo'
 ,p_column_type=>'STRING'
@@ -11221,9 +11245,18 @@ wwv_flow_api.create_worksheet_column(
 wwv_flow_api.create_worksheet_column(
  p_id=>wwv_flow_api.id(6570438809565215)
 ,p_db_column_name=>'ESTADO'
-,p_display_order=>25
+,p_display_order=>45
 ,p_column_identifier=>'I'
 ,p_column_label=>'Estado'
+,p_column_type=>'STRING'
+,p_column_alignment=>'CENTER'
+);
+wwv_flow_api.create_worksheet_column(
+ p_id=>wwv_flow_api.id(3719063554097505)
+,p_db_column_name=>'EQU_LICENCIA'
+,p_display_order=>55
+,p_column_identifier=>'L'
+,p_column_label=>'Licencia'
 ,p_column_type=>'STRING'
 ,p_column_alignment=>'CENTER'
 );
@@ -11234,7 +11267,7 @@ wwv_flow_api.create_worksheet_rpt(
 ,p_report_alias=>'32419'
 ,p_status=>'PUBLIC'
 ,p_is_default=>'Y'
-,p_report_columns=>'EQU_ID:EQU_EMP:EQU_NOMBRE:EQU_IP:EQU_UBICACION:EQU_EQU_ACTIVO:ESTADO'
+,p_report_columns=>'EQU_ID:EQU_EMP:EQU_NOMBRE:EQU_IP:EQU_UBICACION:EQU_EQU_ACTIVO:ESTADO:USADO:PORCENTAJE:EQU_LICENCIA'
 );
 wwv_flow_api.create_page_button(
  p_id=>wwv_flow_api.id(6635361130668957)
@@ -11274,8 +11307,7 @@ wwv_flow_api.create_page_button(
 ,p_button_is_hot=>'Y'
 ,p_button_image_alt=>'Crear'
 ,p_button_position=>'REGION_TEMPLATE_CREATE'
-,p_button_condition=>'P5_EMP_ID'
-,p_button_condition_type=>'ITEM_IS_NULL'
+,p_button_condition_type=>'NEVER'
 ,p_database_action=>'INSERT'
 );
 wwv_flow_api.create_page_button(
@@ -11290,8 +11322,7 @@ wwv_flow_api.create_page_button(
 ,p_button_position=>'REGION_TEMPLATE_DELETE'
 ,p_button_redirect_url=>'javascript:apex.confirm(htmldb_delete_message,''DELETE'');'
 ,p_button_execute_validations=>'N'
-,p_button_condition=>'P5_EMP_ID'
-,p_button_condition_type=>'ITEM_IS_NOT_NULL'
+,p_button_condition_type=>'NEVER'
 ,p_database_action=>'DELETE'
 );
 wwv_flow_api.create_page_button(
@@ -11305,7 +11336,7 @@ wwv_flow_api.create_page_button(
 ,p_button_is_hot=>'Y'
 ,p_button_image_alt=>'Crear'
 ,p_button_position=>'RIGHT_OF_IR_SEARCH_BAR'
-,p_button_redirect_url=>'f?p=&APP_ID.:6:&SESSION.::&DEBUG.:6:P6_EQU_EMP:&P5_EMP_ID.'
+,p_button_redirect_url=>'f?p=&APP_ID.:6:&SESSION.::&DEBUG.:6:P6_EQU_EMP,P6_EQU_EMP:&P5_EMP_ID.,&P5_EMP_CAPACIDAD.'
 );
 wwv_flow_api.create_page_item(
  p_id=>wwv_flow_api.id(6570725279565218)
@@ -11346,12 +11377,14 @@ wwv_flow_api.create_page_item(
 ,p_prompt=>'Nombre'
 ,p_source=>'EMP_NOMBRE'
 ,p_source_type=>'REGION_SOURCE_COLUMN'
-,p_display_as=>'NATIVE_DISPLAY_ONLY'
+,p_display_as=>'NATIVE_TEXT_FIELD'
+,p_cSize=>30
 ,p_field_template=>wwv_flow_api.id(6525426890509035)
 ,p_item_template_options=>'#DEFAULT#'
-,p_attribute_01=>'Y'
-,p_attribute_02=>'VALUE'
-,p_attribute_04=>'Y'
+,p_attribute_01=>'N'
+,p_attribute_02=>'N'
+,p_attribute_04=>'TEXT'
+,p_attribute_05=>'BOTH'
 );
 wwv_flow_api.create_page_item(
  p_id=>wwv_flow_api.id(6631408051668954)
@@ -11375,32 +11408,16 @@ wwv_flow_api.create_page_item(
 wwv_flow_api.create_page_item(
  p_id=>wwv_flow_api.id(6631793210668955)
 ,p_name=>'P5_EMP_USADO'
-,p_source_data_type=>'NUMBER'
 ,p_item_sequence=>40
 ,p_item_plug_id=>wwv_flow_api.id(6630276012668951)
-,p_item_source_plug_id=>wwv_flow_api.id(6630276012668951)
+,p_use_cache_before_default=>'NO'
 ,p_item_default=>'0'
 ,p_prompt=>'Usado (GB)'
-,p_source=>'EMP_USADO'
-,p_source_type=>'REGION_SOURCE_COLUMN'
-,p_display_as=>'NATIVE_DISPLAY_ONLY'
-,p_field_template=>wwv_flow_api.id(6525426890509035)
-,p_item_template_options=>'#DEFAULT#'
-,p_attribute_01=>'Y'
-,p_attribute_02=>'VALUE'
-,p_attribute_04=>'Y'
-);
-wwv_flow_api.create_page_item(
- p_id=>wwv_flow_api.id(6632219381668956)
-,p_name=>'P5_EMP_ESTADO'
-,p_source_data_type=>'VARCHAR2'
-,p_item_sequence=>60
-,p_item_plug_id=>wwv_flow_api.id(6630276012668951)
-,p_item_source_plug_id=>wwv_flow_api.id(6630276012668951)
-,p_item_default=>'CORRECTO'
-,p_prompt=>'Estado'
-,p_source=>'EMP_ESTADO'
-,p_source_type=>'REGION_SOURCE_COLUMN'
+,p_source=>wwv_flow_string.join(wwv_flow_t_varchar2(
+'select nvl(sum(nvl(equ_usado,0)),0)',
+'from equipos',
+'where equ_emp = :P5_EMP_ID'))
+,p_source_type=>'QUERY'
 ,p_display_as=>'NATIVE_DISPLAY_ONLY'
 ,p_field_template=>wwv_flow_api.id(6525426890509035)
 ,p_item_template_options=>'#DEFAULT#'
@@ -11423,8 +11440,21 @@ wwv_flow_api.create_page_process(
 ,p_error_display_location=>'INLINE_IN_NOTIFICATION'
 );
 wwv_flow_api.create_page_process(
- p_id=>wwv_flow_api.id(6636904631668957)
+ p_id=>wwv_flow_api.id(3719154717097506)
 ,p_process_sequence=>20
+,p_process_point=>'AFTER_SUBMIT'
+,p_process_type=>'NATIVE_PLSQL'
+,p_process_name=>'Borrar equipos'
+,p_process_sql_clob=>wwv_flow_string.join(wwv_flow_t_varchar2(
+'delete from equipos',
+'where equ_emp = :P5_EMP_ID;'))
+,p_process_clob_language=>'PLSQL'
+,p_error_display_location=>'INLINE_IN_NOTIFICATION'
+,p_process_when_button_id=>wwv_flow_api.id(6634962377668957)
+);
+wwv_flow_api.create_page_process(
+ p_id=>wwv_flow_api.id(6636904631668957)
+,p_process_sequence=>30
 ,p_process_point=>'AFTER_SUBMIT'
 ,p_region_id=>wwv_flow_api.id(6630276012668951)
 ,p_process_type=>'NATIVE_FORM_DML'
@@ -11458,7 +11488,7 @@ wwv_flow_api.create_page(
 ,p_page_template_options=>'#DEFAULT#'
 ,p_protection_level=>'C'
 ,p_last_updated_by=>'ADMIN'
-,p_last_upd_yyyymmddhh24miss=>'20250508193454'
+,p_last_upd_yyyymmddhh24miss=>'20250525192032'
 );
 wwv_flow_api.create_page_plug(
  p_id=>wwv_flow_api.id(9919793148629342)
@@ -11542,6 +11572,71 @@ wwv_flow_api.create_page_branch(
 ,p_branch_sequence=>1
 );
 wwv_flow_api.create_page_item(
+ p_id=>wwv_flow_api.id(3606926399422406)
+,p_name=>'P6_EQU_LICENCIA'
+,p_source_data_type=>'VARCHAR2'
+,p_item_sequence=>120
+,p_item_plug_id=>wwv_flow_api.id(9919793148629342)
+,p_item_source_plug_id=>wwv_flow_api.id(9919793148629342)
+,p_prompt=>'Licencia'
+,p_source=>'EQU_LICENCIA'
+,p_source_type=>'REGION_SOURCE_COLUMN'
+,p_display_as=>'NATIVE_DISPLAY_ONLY'
+,p_field_template=>wwv_flow_api.id(6525426890509035)
+,p_item_template_options=>'#DEFAULT#'
+,p_attribute_01=>'Y'
+,p_attribute_02=>'VALUE'
+,p_attribute_04=>'Y'
+);
+wwv_flow_api.create_page_item(
+ p_id=>wwv_flow_api.id(3719443777097509)
+,p_name=>'P6_EQU_USADO'
+,p_source_data_type=>'NUMBER'
+,p_item_sequence=>70
+,p_item_plug_id=>wwv_flow_api.id(9919793148629342)
+,p_item_source_plug_id=>wwv_flow_api.id(9919793148629342)
+,p_item_default=>'0'
+,p_prompt=>'Usado (GB)'
+,p_source=>'EQU_USADO'
+,p_source_type=>'REGION_SOURCE_COLUMN'
+,p_display_as=>'NATIVE_DISPLAY_ONLY'
+,p_field_template=>wwv_flow_api.id(6525426890509035)
+,p_item_template_options=>'#DEFAULT#'
+,p_attribute_01=>'Y'
+,p_attribute_02=>'VALUE'
+,p_attribute_04=>'Y'
+);
+wwv_flow_api.create_page_item(
+ p_id=>wwv_flow_api.id(3719525015097510)
+,p_name=>'P6_EQU_CAPACIDAD'
+,p_source_data_type=>'NUMBER'
+,p_item_sequence=>80
+,p_item_plug_id=>wwv_flow_api.id(9919793148629342)
+,p_item_source_plug_id=>wwv_flow_api.id(9919793148629342)
+,p_item_default=>'P6_EMP_CAPACIDAD'
+,p_item_default_type=>'ITEM'
+,p_prompt=>'Capacidad (GB)'
+,p_placeholder=>unistr('M\00E1ximo de empresa')
+,p_source=>'EQU_CAPACIDAD'
+,p_source_type=>'REGION_SOURCE_COLUMN'
+,p_display_as=>'NATIVE_NUMBER_FIELD'
+,p_cSize=>32
+,p_field_template=>wwv_flow_api.id(6525426890509035)
+,p_item_icon_css_classes=>'fa-database'
+,p_item_template_options=>'#DEFAULT#'
+,p_attribute_01=>'0'
+,p_attribute_02=>'&P6_EMP_CAPACIDAD.'
+,p_attribute_03=>'left'
+);
+wwv_flow_api.create_page_item(
+ p_id=>wwv_flow_api.id(3719601245097511)
+,p_name=>'P6_EMP_CAPACIDAD'
+,p_item_sequence=>90
+,p_item_plug_id=>wwv_flow_api.id(9919793148629342)
+,p_display_as=>'NATIVE_HIDDEN'
+,p_attribute_01=>'Y'
+);
+wwv_flow_api.create_page_item(
  p_id=>wwv_flow_api.id(6725134009929253)
 ,p_name=>'P6_EQU_ID'
 ,p_source_data_type=>'NUMBER'
@@ -11613,7 +11708,7 @@ wwv_flow_api.create_page_item(
  p_id=>wwv_flow_api.id(6726741421929253)
 ,p_name=>'P6_EQU_UBICACION'
 ,p_source_data_type=>'VARCHAR2'
-,p_item_sequence=>50
+,p_item_sequence=>60
 ,p_item_plug_id=>wwv_flow_api.id(9919793148629342)
 ,p_item_source_plug_id=>wwv_flow_api.id(9919793148629342)
 ,p_prompt=>'Ubicacion'
@@ -11633,7 +11728,7 @@ wwv_flow_api.create_page_item(
  p_id=>wwv_flow_api.id(6727096859929253)
 ,p_name=>'P6_EQU_ACTIVO'
 ,p_source_data_type=>'VARCHAR2'
-,p_item_sequence=>60
+,p_item_sequence=>100
 ,p_item_plug_id=>wwv_flow_api.id(9919793148629342)
 ,p_item_source_plug_id=>wwv_flow_api.id(9919793148629342)
 ,p_item_default=>'S'
@@ -11653,22 +11748,49 @@ wwv_flow_api.create_page_item(
  p_id=>wwv_flow_api.id(6727496934929253)
 ,p_name=>'P6_EQU_ESTADO'
 ,p_source_data_type=>'VARCHAR2'
-,p_item_sequence=>70
+,p_item_sequence=>110
 ,p_item_plug_id=>wwv_flow_api.id(9919793148629342)
 ,p_item_source_plug_id=>wwv_flow_api.id(9919793148629342)
+,p_item_default=>'CORRECTO'
 ,p_prompt=>'Estado'
 ,p_source=>'EQU_ESTADO'
 ,p_source_type=>'REGION_SOURCE_COLUMN'
-,p_display_as=>'NATIVE_DISPLAY_ONLY'
+,p_display_as=>'NATIVE_TEXT_FIELD'
+,p_cSize=>30
 ,p_field_template=>wwv_flow_api.id(6525426890509035)
 ,p_item_template_options=>'#DEFAULT#'
-,p_attribute_01=>'Y'
-,p_attribute_02=>'VALUE'
-,p_attribute_04=>'Y'
+,p_attribute_01=>'N'
+,p_attribute_02=>'N'
+,p_attribute_04=>'TEXT'
+,p_attribute_05=>'BOTH'
+);
+wwv_flow_api.create_page_process(
+ p_id=>wwv_flow_api.id(3719261603097507)
+,p_process_sequence=>20
+,p_process_point=>'AFTER_SUBMIT'
+,p_process_type=>'NATIVE_PLSQL'
+,p_process_name=>'Generar licencia'
+,p_process_sql_clob=>':P6_EQU_LICENCIA := generar_licencia();'
+,p_process_clob_language=>'PLSQL'
+,p_error_display_location=>'INLINE_IN_NOTIFICATION'
+,p_process_when=>'P6_EQU_LICENCIA'
+,p_process_when_type=>'ITEM_IS_NULL'
+);
+wwv_flow_api.create_page_process(
+ p_id=>wwv_flow_api.id(3719321765097508)
+,p_process_sequence=>30
+,p_process_point=>'AFTER_SUBMIT'
+,p_process_type=>'NATIVE_PLSQL'
+,p_process_name=>'Asignar capacidad'
+,p_process_sql_clob=>':P6_EQU_CAPACIDAD := :P6_EMP_CAPACIDAD;'
+,p_process_clob_language=>'PLSQL'
+,p_error_display_location=>'INLINE_IN_NOTIFICATION'
+,p_process_when=>'P6_EQU_LICENCIA'
+,p_process_when_type=>'ITEM_IS_NULL'
 );
 wwv_flow_api.create_page_process(
  p_id=>wwv_flow_api.id(6730406749929254)
-,p_process_sequence=>10
+,p_process_sequence=>40
 ,p_process_point=>'AFTER_SUBMIT'
 ,p_region_id=>wwv_flow_api.id(9919793148629342)
 ,p_process_type=>'NATIVE_FORM_DML'
