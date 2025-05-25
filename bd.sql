@@ -52,11 +52,13 @@ END toolkit;
 /
 
 /* SECUENCIAS */
-CREATE SEQUENCE   "CLIENTES_SEQ"  MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 1 CACHE 20 NOORDER  NOCYCLE
+CREATE SEQUENCE   "CLIENTES_SEQ"  MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 1 NOORDER  NOCYCLE
 /
-CREATE SEQUENCE   "USUARIOS_SEQ"  MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 1 CACHE 20 NOORDER  NOCYCLE
+CREATE SEQUENCE   "USUARIOS_SEQ"  MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 1 NOORDER  NOCYCLE
 /
-CREATE SEQUENCE   "EMPRESAS_SEQ"  MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 1 CACHE 20 NOORDER  NOCYCLE
+CREATE SEQUENCE   "EMPRESAS_SEQ"  MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 1 NOORDER  NOCYCLE
+/
+CREATE SEQUENCE   "EQUIPOS_SEQ"  MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 1 NOORDER  NOCYCLE
 /
 
 
@@ -72,10 +74,10 @@ CREATE TABLE  "CLIENTES"
 	"CLI_TELEFONO" VARCHAR2(255), 
 	"CLI_DIRECCION" VARCHAR2(255), 
 	"CLI_TIPO" VARCHAR2(1), 
-	"CLI_LICENCIA" VARCHAR2(15), 
 	 CONSTRAINT "CLIENTES_PK" PRIMARY KEY ("CLI_ID") ENABLE
    )
 /
+
 CREATE OR REPLACE TRIGGER  "BI_CLIENTES" 
   before insert on "CLIENTES"               
   for each row  
@@ -94,8 +96,6 @@ CREATE TABLE  "EMPRESAS"
 	"EMP_CLIENTE" NUMBER(10,0), 
 	"EMP_NOMBRE" VARCHAR2(50), 
 	"EMP_CAPACIDAD" NUMBER(10,2), 
-	"EMP_USADO" NUMBER(10,2), 
-	"EMP_ESTADO" VARCHAR2(30), 
 	 CONSTRAINT "EMPRESAS_PK" PRIMARY KEY ("EMP_ID") ENABLE
    )
 /
@@ -107,10 +107,38 @@ begin
   if :NEW."EMP_ID" is null then 
     select "EMPRESAS_SEQ".nextval into :NEW."EMP_ID" from sys.dual; 
   end if; 
-end; 
+end;
 
 /
 ALTER TRIGGER  "BI_EMPRESAS" ENABLE
+/
+
+CREATE TABLE  "EQUIPOS" 
+   (	"EQU_ID" NUMBER(10,0), 
+	"EQU_EMP" NUMBER(10,0), 
+	"EQU_NOMBRE" VARCHAR2(30), 
+	"EQU_IP" VARCHAR2(15), 
+	"EQU_UBICACION" VARCHAR2(100), 
+	"EQU_ACTIVO" VARCHAR2(1), 
+	"EQU_ESTADO" VARCHAR2(30), 
+	"EQU_LICENCIA" VARCHAR2(15), 
+	"EQU_USADO" NUMBER(10,2), 
+	"EQU_CAPACIDAD" NUMBER(10,2), 
+	 CONSTRAINT "EQUIPOS_PK" PRIMARY KEY ("EQU_ID") ENABLE
+   )
+/
+
+CREATE OR REPLACE TRIGGER  "BI_EQUIPOS" 
+  before insert on "EQUIPOS"               
+  for each row  
+begin   
+  if :NEW."EQU_ID" is null then 
+    select "EQUIPOS_SEQ".nextval into :NEW."EQU_ID" from sys.dual; 
+  end if; 
+end; 
+
+/
+ALTER TRIGGER  "BI_EQUIPOS" ENABLE
 /
 
 CREATE TABLE  "USUARIOS" 
@@ -134,56 +162,7 @@ end;
 /
 ALTER TRIGGER  "BI_USUARIOS" ENABLE
 /
-
-CREATE TABLE  "EQUIPOS" 
-   (	"EQU_ID" NUMBER(10,0), 
-	"EQU_EMP" NUMBER(10,0), 
-	"EQU_NOMBRE" VARCHAR2(30), 
-	"EQU_IP" VARCHAR2(15), 
-	"EQU_UBICACION" VARCHAR2(100), 
-	"EQU_ACTIVO" VARCHAR2(1), 
-	"EQU_ESTADO" VARCHAR2(30), 
-	 CONSTRAINT "EQUIPOS_PK" PRIMARY KEY ("EQU_ID") ENABLE
-   )
-/
-
-CREATE OR REPLACE TRIGGER  "BI_EQUIPOS" 
-  before insert on "EQUIPOS"               
-  for each row  
-begin   
-  if :NEW."EQU_ID" is null then 
-    select "EQUIPOS_SEQ".nextval into :NEW."EQU_ID" from sys.dual; 
-  end if; 
-end; 
-
-/
-ALTER TRIGGER  "BI_EQUIPOS" ENABLE
-/
-
 /* FUNCIONES */
-create or replace FUNCTION AUT_USUARIOS (p_username IN VARCHAR2,  
-                                        p_password IN VARCHAR2)  
-RETURN BOOLEAN  
-IS  
-    l_clave_alm VARCHAR2(4000);  
-    l_count     NUMBER;      
-BEGIN  
-    SELECT COUNT(*) INTO l_count FROM USUARIOS  
-    WHERE upper(usu_nombre) = upper(p_username);  
-    apex_debug.message('Usuario: '||p_username||', Clave: '||p_password||', Count: '||l_count);
-    IF l_count > 0 and p_username is not null and p_password is not null THEN   --Comprueba que existan usuarios y le hayas pasado un usuario/clave
-        SELECT usu_clave  
-        INTO l_clave_alm  
-        FROM USUARIOS  
-        WHERE upper(usu_nombre) = upper(p_username);  
-        IF toolkit.encriptar(p_password,'AIO987654') = l_clave_alm THEN
-            RETURN TRUE;
-        ELSE RETURN FALSE;
-        END IF;
-    ELSE RETURN FALSE;
-    END IF;  
-END;
-
 create or replace FUNCTION AUT_CLIENTES (p_username IN VARCHAR2,  
                                         p_password IN VARCHAR2)  
 RETURN BOOLEAN  
@@ -207,6 +186,29 @@ BEGIN
     END IF;  
 END;
 
+create or replace FUNCTION AUT_USUARIOS (p_username IN VARCHAR2,  
+                                        p_password IN VARCHAR2)  
+RETURN BOOLEAN  
+IS  
+    l_clave_alm VARCHAR2(4000);  
+    l_count     NUMBER;      
+BEGIN  
+    SELECT COUNT(*) INTO l_count FROM USUARIOS  
+    WHERE upper(usu_nombre) = upper(p_username);  
+    apex_debug.message('Usuario: '||p_username||', Clave: '||p_password||', Count: '||l_count);
+    IF l_count > 0 and p_username is not null and p_password is not null THEN   --Comprueba que existan usuarios y le hayas pasado un usuario/clave
+        SELECT usu_clave  
+        INTO l_clave_alm  
+        FROM USUARIOS  
+        WHERE upper(usu_nombre) = upper(p_username);  
+        IF toolkit.encriptar(p_password,'AIO987654') = l_clave_alm THEN
+            RETURN TRUE;
+        ELSE RETURN FALSE;
+        END IF;
+    ELSE RETURN FALSE;
+    END IF;  
+END;
+
 create or replace FUNCTION GENERAR_LICENCIA RETURN VARCHAR2 IS
     v_key   VARCHAR2(15);
     v_chars CONSTANT VARCHAR2(100) := 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -218,3 +220,10 @@ BEGIN
 
     RETURN v_key;
 END;
+
+
+/* INSERT DATOS BASICOS */
+insert into usuarios values(1,'admin','652871C5A9F88F37','S');
+insert into clientes values(1,'231546789J','Demo','E6016A5A97B5223E','S','demo@demo.com','C/ Demostración, nº1, 2ºA','A');
+insert into empresas values(1,1,'Empresa Demo','100');
+insert into equipos values(1,1,'PC Demo','192.168.1.50','Oficina','S','CORRECTO',GENERAR_LICENCIA(),35,100);
