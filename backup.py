@@ -1,8 +1,13 @@
 import os
 import py7zr
+import sys
 from b2sdk.v1 import B2Api, InMemoryAccountInfo
 from config import B2_APP_KEY_ID, B2_APP_KEY, B2_BUCKET_NAME
 from typing import List
+
+print(">>> Python:", sys.executable)
+print(">>> py7zr version:", py7zr.__version__)
+
 
 def compress_files(
     output_path: str,
