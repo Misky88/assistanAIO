@@ -5,17 +5,32 @@ import sys
 import psutil
 import random
 import string
-from PyQt6.QtCore import QSize, Qt, QTimer
-from PyQt6.QtGui import QIcon, QFont
+from PyQt6.QtCore import QSize, Qt, QTimer, QUrl
+from PyQt6.QtGui import QIcon, QFont, QDesktopServices
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, QWidget,
                              QVBoxLayout, QHBoxLayout, QLabel, QFrame, QStackedWidget,
-                             QLineEdit, QSpacerItem, QSizePolicy, QMessageBox)
+                             QLineEdit, QSpacerItem, QSizePolicy, QMessageBox,
+                             QTableWidget, QTableWidgetItem, QAbstractItemView)
+from PyQt6.QtGui import QDesktopServices
+from PyQt6.QtCore import QUrl
 
 from app_backup import BackupApp
 from chocolatey import PackageApp
 from comandowin import ComandaWin
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+def get_pc_brand():
+    try:
+        import wmi
+        c = wmi.WMI()
+        for system in c.Win32_ComputerSystem():
+            manufacturer = system.Manufacturer.strip().lower()
+            model = system.Model.strip().lower()
+            return manufacturer, model
+    except Exception:
+        uname = platform.uname()
+        return uname.system.lower(), uname.node.lower()
 
 class SystemInfoApp(QMainWindow):
     def __init__(self):
@@ -109,6 +124,7 @@ class SystemInfoApp(QMainWindow):
                 background-color: #34495e;
             }
         """)
+        self.btn_drivers.clicked.connect(self.show_drivers_ui)
         sidebar_layout.addWidget(self.btn_drivers)
 
         # Botón de Comandos Windows
@@ -196,6 +212,11 @@ class SystemInfoApp(QMainWindow):
         self.register_page = QWidget()
         self.setup_register_page()
         self.stacked_widget.addWidget(self.register_page)
+        
+        # Página de Drivers
+        self.drivers_page = QWidget()
+        self.setup_drivers_page()
+        self.stacked_widget.addWidget(self.drivers_page)
         
     def setup_register_page(self):
         layout = QVBoxLayout(self.register_page)
@@ -409,6 +430,9 @@ class SystemInfoApp(QMainWindow):
     def show_register_ui(self):
         self.stacked_widget.setCurrentWidget(self.register_page)
 
+    def show_drivers_ui(self):
+        self.stacked_widget.setCurrentWidget(self.drivers_page)
+
     def generate_license(self):
         license_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=20))
         self.license_input.setText(license_code)
@@ -418,6 +442,108 @@ class SystemInfoApp(QMainWindow):
         self.cpu_usage.setText(f"CPU: {psutil.cpu_percent()}%") 
         mem = psutil.virtual_memory()
         self.mem_usage.setText(f"RAM: {mem.percent}%")
+
+    def setup_drivers_page(self):
+        layout = QVBoxLayout(self.drivers_page)
+        layout.setContentsMargins(30, 30, 30, 30)
+        title = QLabel("Descarga tus Drivers")
+        title.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        title.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
+        layout.addWidget(title)
+
+        # Tabla de marcas y enlaces
+        self.table = QTableWidget()
+        self.table.setColumnCount(2)
+        self.table.setHorizontalHeaderLabels(["Marca", "Enlace de Drivers"])
+        self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table.setAlternatingRowColors(True)
+        self.table.horizontalHeader().setStretchLastSection(True)
+
+        brands = [
+            ("ASUS", "https://www.asus.com/support/"),
+            ("MSI", "https://www.msi.com/support"),
+            ("GIGABYTE", "https://www.gigabyte.com/Support"),
+            ("ASRock", "https://www.asrock.com/support/index.asp"),
+            ("EVGA", "https://www.evga.com/support/download/"),
+            ("Zotac", "https://www.zotac.com/support/download"),
+            ("Sapphire", "https://www.sapphiretech.com/en/support/"),
+            ("XFX", "https://www.xfxforce.com/support/downloads"),
+            ("Palit", "https://www.palit.com/palit/download.php"),
+            ("PNY", "https://www.pny.com/support"),
+            ("Intel", "https://www.intel.com/content/www/us/en/download-center/home.html"),
+            ("AMD", "https://www.amd.com/en/support"),
+            ("NVIDIA", "https://www.nvidia.com/Download/index.aspx"),
+            ("Samsung", "https://semiconductor.samsung.com/consumer-storage/support/tools/"),
+            ("Kingston", "https://www.kingston.com/support/technical/products"),
+            ("Corsair", "https://www.corsair.com/us/en/support/downloads"),
+            ("Crucial", "https://www.crucial.com/support/drivers-updates"),
+            ("Western Digital", "https://support.wdc.com/downloads.aspx"),
+            ("Seagate", "https://www.seagate.com/support/downloads/"),
+            ("Toshiba", "https://www.toshiba-storage.com/support/"),
+            ("Sandisk", "https://kb.sandisk.com/app/answers/list/search/1/kw/drivers"),
+            ("Patriot", "https://www.patriotmemory.com/pages/support"),
+            ("G.Skill", "https://www.gskill.com/download/1502180912/1548819606/DRAM-Module"),
+            ("TeamGroup", "https://www.teamgroupinc.com/en/support/"),
+            ("HyperX", "https://www.hyperxgaming.com/unitedstates/us/support/"),
+            ("Adata", "https://www.adata.com/en/support/download/"),
+            ("Mushkin", "https://mushkin.com/support/"),
+            ("Apacer", "https://consumer.apacer.com/eng/support/Driver"),
+            ("Biostar", "https://www.biostar.com.tw/app/en/support/download.php"),
+            ("Foxconn", "https://www.foxconnchannel.com/ProductDetail.aspx?T=Motherboard"),
+            ("ECS", "https://www.ecs.com.tw/en/support/download"),
+            ("Supermicro", "https://www.supermicro.com/support/resources/downloadcenter"),
+            ("Dell", "https://www.dell.com/support/home/drivers"),
+            ("HP", "https://support.hp.com/us-en/drivers"),
+            ("Lenovo", "https://pcsupport.lenovo.com/us/en/downloads"),
+            ("Acer", "https://www.acer.com/ac/en/US/content/drivers"),
+            ("Gigabyte Aorus", "https://www.aorus.com/support/download/"),
+            ("Alienware", "https://www.dell.com/support/home/drivers"),
+            ("Logitech", "https://support.logi.com/hc/es/articles/360024692814"),
+            ("Razer", "https://support.razer.com/pc/"),
+            ("SteelSeries", "https://steelseries.com/engine"),
+            ("Cooler Master", "https://www.coolermaster.com/catalog/support-downloads/"),
+            ("NZXT", "https://nzxt.com/software"),
+            ("Thermaltake", "https://www.thermaltake.com/support/download"),
+            ("Seasonic", "https://seasonic.com/support/downloads"),
+            ("Be Quiet!", "https://www.bequiet.com/en/downloads"),
+            ("Enermax", "https://www.enermax.com/en/support/download"),
+            ("Realtek", "https://www.realtek.com/en/downloads"),
+            ("Broadcom", "https://www.broadcom.com/support/download-search"),
+            ("Killer", "https://www.killernetworking.com/driver-downloads/"),
+            ("TP-Link", "https://www.tp-link.com/support/download/"),
+        ]
+
+        # Detectar marca del equipo
+        manufacturer, model = get_pc_brand()
+        # Marcas genéricas que siempre se muestran
+        always_show = ["intel", "amd", "nvidia", "realtek"]
+
+        # Filtrar marcas relevantes
+        filtered = []
+        for brand, url in brands:
+            if brand.lower() in manufacturer or brand.lower() in model or brand.lower() in always_show:
+                filtered.append((brand, url))
+
+        # Si no se detecta ninguna, mostrar todas
+        if not filtered:
+            filtered = brands
+
+        self.table.setRowCount(len(filtered))
+        for row, (brand, url) in enumerate(filtered):
+            self.table.setItem(row, 0, QTableWidgetItem(brand))
+            link_item = QTableWidgetItem(url)
+            link_item.setForeground(Qt.GlobalColor.blue)
+            link_item.setToolTip("Haz doble clic para abrir el enlace")
+            self.table.setItem(row, 1, link_item)
+
+        self.table.cellDoubleClicked.connect(self.open_driver_link)
+        layout.addWidget(self.table)
+
+    def open_driver_link(self, row, column):
+        if column == 1:
+            url = self.table.item(row, column).text()
+            QDesktopServices.openUrl(QUrl(url))
 
 
 if __name__ == "__main__":
