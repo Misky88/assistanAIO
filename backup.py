@@ -5,9 +5,6 @@ from b2sdk.v1 import B2Api, InMemoryAccountInfo
 from config import B2_APP_KEY_ID, B2_APP_KEY, B2_BUCKET_NAME
 from typing import List
 
-print(">>> Python:", sys.executable)
-print(">>> py7zr version:", py7zr.__version__)
-
 
 def compress_files(
     output_path: str,
@@ -106,6 +103,30 @@ def compress_and_upload(
         upload_to_backblaze(part, immutable=immutable, immutability_duration=immutability_duration)
         os.remove(part)
     return f"Backup completado exitosamente: {output_name} {'(' + str(len(parts)) + ' partes)' if len(parts)>1 else ''}"
+
+def encrypt_file_with_aes(input_file: str, output_file: str, key: bytes = None):
+    from Crypto.Cipher import AES
+    from Crypto.Random import get_random_bytes
+    import struct
+
+    if key is None:
+        key = get_random_bytes(32)  # AES-256
+    cipher = AES.new(key, AES.MODE_GCM)
+    with open(input_file, 'rb') as f_in, open(output_file, 'wb') as f_out:
+        nonce = cipher.nonce
+        f_out.write(struct.pack('<I', len(nonce)))
+        f_out.write(nonce)
+        while True:
+            chunk = f_in.read(64 * 1024)
+            if not chunk:
+                break
+            ciphertext = cipher.encrypt(chunk)
+            f_out.write(ciphertext)
+        tag = cipher.digest()
+        f_out.write(tag)
+    # Save the key to a file (for demonstration; in production, use secure key management!)
+    with open(output_file + '.key', 'wb') as key_file:
+        key_file.write(key)
 
 def descomprimir_archivo(ruta_7z, carpeta_destino, password):
     with py7zr.SevenZipFile(ruta_7z, 'r', password=password) as z:
