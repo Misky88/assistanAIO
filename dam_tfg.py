@@ -3,10 +3,13 @@ import os
 import platform
 import sys
 import psutil
+import random
+import string
 from PyQt6.QtCore import QSize, Qt, QTimer
 from PyQt6.QtGui import QIcon, QFont
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, QWidget,
-                             QVBoxLayout, QHBoxLayout, QLabel, QFrame, QStackedWidget)
+                             QVBoxLayout, QHBoxLayout, QLabel, QFrame, QStackedWidget,
+                             QLineEdit, QSpacerItem, QSizePolicy, QMessageBox)
 
 from app_backup import BackupApp
 from chocolatey import PackageApp
@@ -145,6 +148,26 @@ class SystemInfoApp(QMainWindow):
         """)
         self.btn_backups.clicked.connect(self.show_backups_ui)
         sidebar_layout.addWidget(self.btn_backups)
+
+        # Botón de Registro
+        self.btn_register = QPushButton("Registro")
+        self.btn_register.setIcon(QIcon.fromTheme("contact-new"))# Usa aquí el nombre de tu imagen
+        self.btn_register.setIconSize(QSize(24, 24))
+        self.btn_register.setStyleSheet("""
+            QPushButton {
+                color: white;
+                text-align: left;
+                padding: 10px;
+                border: none;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #34495e;
+            }
+        """)
+        self.btn_register.clicked.connect(self.show_register_ui)
+        sidebar_layout.addWidget(self.btn_register)
+
         sidebar_layout.addStretch()
         self.main_layout.addWidget(sidebar)
 
@@ -169,6 +192,71 @@ class SystemInfoApp(QMainWindow):
         self.backups_page = BackupApp()
         self.stacked_widget.addWidget(self.backups_page)
         
+        # Página de Registro
+        self.register_page = QWidget()
+        self.setup_register_page()
+        self.stacked_widget.addWidget(self.register_page)
+        
+    def setup_register_page(self):
+        layout = QVBoxLayout(self.register_page)
+        layout.setContentsMargins(60, 60, 60, 60)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        # Título centrado
+        title = QLabel("Registro Assistant AIO")
+        title.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        title.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
+        title.setStyleSheet("color: #2c3e50; margin-bottom: 30px;")
+        layout.addWidget(title)
+
+        # Correo electrónico
+        email_label = QLabel("Correo Electrónico:")
+        email_label.setStyleSheet("font-weight: bold; color: #34495e;")
+        self.email_input = QLineEdit()
+        self.email_input.setPlaceholderText("Introduce tu correo electrónico")
+        self.email_input.setMinimumHeight(32)
+        layout.addWidget(email_label)
+        layout.addWidget(self.email_input)
+
+        # Contraseña
+        password_label = QLabel("Contraseña:")
+        password_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        self.password_input = QLineEdit()
+        self.password_input.setPlaceholderText("Introduce tu contraseña")
+        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.password_input.setMinimumHeight(32)
+        layout.addWidget(password_label)
+        layout.addWidget(self.password_input)
+
+        # Licencia
+        license_label = QLabel("Licencia:")
+        license_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        self.license_input = QLineEdit()
+        self.license_input.setReadOnly(True)
+        self.license_input.setMinimumHeight(32)
+        layout.addWidget(license_label)
+        layout.addWidget(self.license_input)
+
+        # Botón Generar Licencia
+        self.btn_generate_license = QPushButton("Generar Licencia")
+        self.btn_generate_license.setStyleSheet("""
+            QPushButton {
+                background-color: #2980b9;
+                color: white;
+                padding: 10px;
+                border-radius: 5px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #3498db;
+            }
+        """)
+        self.btn_generate_license.clicked.connect(self.generate_license)
+        layout.addWidget(self.btn_generate_license)
+
+        # Espaciador
+        layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+
     def load_system_info(self):
         """Carga y procesa la información del sistema"""
         try:
@@ -318,6 +406,12 @@ class SystemInfoApp(QMainWindow):
         """Muestra la vista de Backups"""
         self.stacked_widget.setCurrentWidget(self.backups_page)
 
+    def show_register_ui(self):
+        self.stacked_widget.setCurrentWidget(self.register_page)
+
+    def generate_license(self):
+        license_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=20))
+        self.license_input.setText(license_code)
 
     def update_realtime_stats(self):
         """Actualiza las estadísticas en tiempo real"""
