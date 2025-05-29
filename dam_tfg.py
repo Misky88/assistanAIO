@@ -191,6 +191,15 @@ class SystemInfoApp(QMainWindow):
         sidebar_layout.addStretch()
         self.main_layout.addWidget(sidebar)
 
+    def set_sidebar_button_states(self, active_button):
+    # Lista con todos los botones del sidebar
+        for btn in [
+            self.btn_home, self.btn_apps, self.btn_drivers,
+            self.btn_commands, self.btn_backups, self.btn_register
+        ]:
+            btn.setEnabled(btn != active_button)
+
+
     def setup_main_content(self):
         """Configura el área de contenido principal"""
         self.stacked_widget = QStackedWidget()
@@ -363,16 +372,17 @@ class SystemInfoApp(QMainWindow):
         title_label.setStyleSheet("font-weight: bold; color: #34495e;")
         title_label.setFixedWidth(200)
 
-        value_label = QLabel(str(value))
-        value_label.setStyleSheet("color: #7f8c8d;")
-
         layout.addWidget(title_label)
-        layout.addWidget(value_label)
+        if isinstance(value, QLabel):
+            layout.addWidget(value)
+        else:
+            value_label = QLabel(str(value))
+            value_label.setStyleSheet("color: #7f8c8d;")
+            layout.addWidget(value_label)
         return widget
 
     def show_system_info(self):
-
-        
+    
         """Muestra la información del sistema en el área principal"""
         # Limpiar contenido anterior
         old_layout = self.system_info_page.layout()
@@ -386,6 +396,9 @@ class SystemInfoApp(QMainWindow):
             # Eliminar el layout del widget
             old_layout.deleteLater()
 
+
+        self.stacked_widget.setCurrentWidget(self.system_info_page)
+        self.set_sidebar_button_states(self.btn_home)
         # Margen reducido para aprovechar espacio
         layout = QVBoxLayout(self.system_info_page)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -428,6 +441,11 @@ class SystemInfoApp(QMainWindow):
         from datetime import datetime
         now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
+        # Creamos un QLabel para la fecha y hora y lo guardamos como atributo
+        self.datetime_label = QLabel()
+        self.datetime_label.setStyleSheet("color: #7f8c8d;")
+        self.datetime_label.setText(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+
         info_list = [
             ("Sistema Operativo:", self.system_data['os']),
             ("Nombre del Equipo:", self.system_data['hostname']),
@@ -444,8 +462,17 @@ class SystemInfoApp(QMainWindow):
             ("IP local:", self.system_data['ip']),
             ("Adaptador de red:", self.system_data['iface']),
             ("Batería:", f"{self.system_data['battery_percent']} ({self.system_data['battery_status']})"),
-            ("Fecha y hora:", now)
+            # En vez de texto, ponemos el QLabel de fecha/hora
+            ("Fecha y hora:", self.datetime_label)
         ]
+
+        # Creamos un temporizador para actualizar la hora cada segundo
+        if not hasattr(self, 'datetime_timer'):
+            self.datetime_timer = QTimer(self)
+            self.datetime_timer.timeout.connect(
+            lambda: self.datetime_label.setText(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+            )
+            self.datetime_timer.start(1000)
 
         # Crear columnas
         mid = len(info_list) // 2 + len(info_list) % 2
@@ -525,25 +552,27 @@ class SystemInfoApp(QMainWindow):
 
 
     def show_comanda_win(self):
-        """Muestra la vista de Comandos Windows"""
         self.stacked_widget.setCurrentWidget(self.comanda_win_page)
+        self.set_sidebar_button_states(self.btn_commands)
 
     def show_chocolatey_ui(self):
         self.stacked_widget.setCurrentWidget(self.applications_page)
 
     def show_applications_ui(self):
-        """Muestra la vista de Aplicaciones"""
         self.stacked_widget.setCurrentWidget(self.applications_page)
+        self.set_sidebar_button_states(self.btn_apps)
     
     def show_backups_ui(self):
-        """Muestra la vista de Backups"""
         self.stacked_widget.setCurrentWidget(self.backups_page)
+        self.set_sidebar_button_states(self.btn_backups)
 
     def show_register_ui(self):
         self.stacked_widget.setCurrentWidget(self.register_page)
+        self.set_sidebar_button_states(self.btn_register)
 
     def show_drivers_ui(self):
         self.stacked_widget.setCurrentWidget(self.drivers_page)
+        self.set_sidebar_button_states(self.btn_drivers)
 
     def generate_license(self):
         license_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=20))
@@ -662,7 +691,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     
-    # Configurar fuente global
     font = QFont()
     font.setFamily("Segoe UI")
     font.setPointSize(10)
