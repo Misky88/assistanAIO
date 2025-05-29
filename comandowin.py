@@ -50,10 +50,14 @@ class ComandaWin(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+
 
         header = QLabel("🖥️ Ejecutar Comandos de Windows")
         header.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
         header.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        
         header.setStyleSheet("color: #2c3e50; margin-bottom: 15px;")
         layout.addWidget(header)
 

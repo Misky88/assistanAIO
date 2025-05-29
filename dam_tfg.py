@@ -7,6 +7,7 @@ import random
 import string
 import requests
 from PyQt6.QtCore import QSize, Qt, QTimer, QUrl
+from PyQt6.QtWidgets import QScrollArea
 from PyQt6.QtGui import QIcon, QFont, QDesktopServices, QPixmap
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, QWidget,
                              QVBoxLayout, QHBoxLayout, QLabel, QFrame, QStackedWidget,
@@ -38,8 +39,8 @@ class SystemInfoApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Assistant AIO")
-        self.setGeometry(100, 100, 800, 600)
-        self.setMinimumSize(1000, 600)
+        self.setGeometry(100, 100, 1400, 800)          
+        self.setMinimumSize(1200, 700) 
         # self.setMaximumSize(1000,800)
         
         # Configuración principal de la UI
@@ -132,6 +133,7 @@ class SystemInfoApp(QMainWindow):
         # Botón de Comandos Windows
         self.btn_commands = QPushButton("Comandos Windows")
         self.btn_commands.setIcon(QIcon.fromTheme("utilities-terminal"))
+       
         self.btn_commands.setIconSize(QSize(24, 24))
         self.btn_commands.setStyleSheet("""
             QPushButton {
@@ -369,8 +371,10 @@ class SystemInfoApp(QMainWindow):
         return widget
 
     def show_system_info(self):
+
+        
         """Muestra la información del sistema en el área principal"""
-    # Limpiar contenido anterior
+        # Limpiar contenido anterior
         old_layout = self.system_info_page.layout()
         if old_layout is not None:
             # Eliminar widgets del layout anterior
@@ -382,9 +386,10 @@ class SystemInfoApp(QMainWindow):
             # Eliminar el layout del widget
             old_layout.deleteLater()
 
+        # Margen reducido para aprovechar espacio
         layout = QVBoxLayout(self.system_info_page)
-        layout.setContentsMargins(30, 30, 30, 30)
-    
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(16)
         
         # Encabezado
         header = QLabel("Información del Sistema")
@@ -395,18 +400,12 @@ class SystemInfoApp(QMainWindow):
             margin-bottom: 20px;
         """)
         layout.addWidget(header)
-        
-        # Sección principal
-        main_content = QWidget()
-        main_layout = QVBoxLayout(main_content)
-        
-        # Logo/avatar según marca
+
+        # Logo/avatar centrado arriba
         logo_label = QLabel()
         logo_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         logo_path = None
-        manufacturer = self.system_data['manufacturer'].lower()  # Asegura minúsculas
-
-        print("DEBUG manufacturer:", manufacturer)  # Quita esto cuando funcione
+        manufacturer = self.system_data['manufacturer'].lower()
 
         if "lenovo" in manufacturer:
             logo_path = os.path.join(os.path.dirname(__file__), "images", "Branding_lenovo-logo_lenovologoposred_low_res.png")
@@ -414,7 +413,7 @@ class SystemInfoApp(QMainWindow):
             logo_path = os.path.join(os.path.dirname(__file__), "images", "ASUS_Corporate_Logo.png")
         elif "hp" in manufacturer:
             logo_path = os.path.join(os.path.dirname(__file__), "images", "HP_logo_2008.png")
-        # ...añade más marcas si tienes más logos...
+        # Añade más marcas si quieres...
 
         if logo_path and os.path.exists(logo_path):
             pixmap = QPixmap(logo_path)
@@ -423,37 +422,55 @@ class SystemInfoApp(QMainWindow):
             logo_label.setText("🖥️")
             logo_label.setStyleSheet("font-size: 48px;")
 
-        main_layout.addWidget(logo_label)
+        layout.addWidget(logo_label)
 
-        # Información básica
-        main_layout.addWidget(self.create_info_row("Sistema Operativo:", self.system_data['os']))
-        main_layout.addWidget(self.create_info_row("Nombre del Equipo:", self.system_data['hostname']))
-        main_layout.addWidget(self.create_info_row("Procesador:", self.system_data['processor']))
-        main_layout.addWidget(self.create_info_row("GPU:", self.system_data['gpu']))
-        main_layout.addWidget(self.create_info_row("Arquitectura:", self.system_data['architecture']))
-        main_layout.addWidget(self.create_info_row("Núcleos Físicos:", self.system_data['cores']))
-        main_layout.addWidget(self.create_info_row("Núcleos Lógicos:", self.system_data['threads']))
-        main_layout.addWidget(self.create_info_row("Frecuencia CPU:", self.system_data['cpu_freq']))
-        main_layout.addWidget(self.create_info_row("Memoria RAM:", self.system_data['ram']))
-
-        # Almacenamiento
-        main_layout.addWidget(self.create_info_row("Disco total:", self.system_data['disk_total']))
-        main_layout.addWidget(self.create_info_row("Disco usado:", self.system_data['disk_used']))
-        main_layout.addWidget(self.create_info_row("Disco libre:", self.system_data['disk_free']))
-
-        # Red
-        main_layout.addWidget(self.create_info_row("IP local:", self.system_data['ip']))
-        main_layout.addWidget(self.create_info_row("Adaptador de red:", self.system_data['iface']))
-
-        # Batería
-        main_layout.addWidget(self.create_info_row("Batería:", f"{self.system_data['battery_percent']} ({self.system_data['battery_status']})"))
-
-        # Fecha y hora actual
+        # Info en dos columnas
         from datetime import datetime
         now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        main_layout.addWidget(self.create_info_row("Fecha y hora:", now))
 
-        # Enlaces rápidos
+        info_list = [
+            ("Sistema Operativo:", self.system_data['os']),
+            ("Nombre del Equipo:", self.system_data['hostname']),
+            ("Procesador:", self.system_data['processor']),
+            ("GPU:", self.system_data['gpu']),
+            ("Arquitectura:", self.system_data['architecture']),
+            ("Núcleos Físicos:", self.system_data['cores']),
+            ("Núcleos Lógicos:", self.system_data['threads']),
+            ("Frecuencia CPU:", self.system_data['cpu_freq']),
+            ("Memoria RAM:", self.system_data['ram']),
+            ("Disco total:", self.system_data['disk_total']),
+            ("Disco usado:", self.system_data['disk_used']),
+            ("Disco libre:", self.system_data['disk_free']),
+            ("IP local:", self.system_data['ip']),
+            ("Adaptador de red:", self.system_data['iface']),
+            ("Batería:", f"{self.system_data['battery_percent']} ({self.system_data['battery_status']})"),
+            ("Fecha y hora:", now)
+        ]
+
+        # Crear columnas
+        mid = len(info_list) // 2 + len(info_list) % 2
+        col1 = QVBoxLayout()
+        col2 = QVBoxLayout()
+        for title, value in info_list[:mid]:
+            col1.addWidget(self.create_info_row(title, value))
+        for title, value in info_list[mid:]:
+            col2.addWidget(self.create_info_row(title, value))
+
+        columns_widget = QWidget()
+        columns_layout = QHBoxLayout(columns_widget)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+        columns_layout.addLayout(col1)
+        columns_layout.addLayout(col2)
+
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        scroll_area.setWidget(columns_widget)
+        layout.addWidget(scroll_area)
+
+        # Enlaces rápidos (Administrador de tareas / Configuración)
         links_widget = QWidget()
         links_layout = QHBoxLayout(links_widget)
         btn_taskmgr = QPushButton("Administrador de tareas")
@@ -462,14 +479,14 @@ class SystemInfoApp(QMainWindow):
         btn_settings.clicked.connect(lambda: os.system("start ms-settings:"))
         links_layout.addWidget(btn_taskmgr)
         links_layout.addWidget(btn_settings)
-        main_layout.addWidget(links_widget)
+        layout.addWidget(links_widget)
 
         # Separador
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setStyleSheet("color: #bdc3c7;")
-        main_layout.addWidget(separator)
-        
+        separator.setStyleSheet("color: #bdc3c7; margin: 12px 0;")
+        layout.addWidget(separator)
+
         # Estadísticas en tiempo real
         realtime_stats = QLabel("Estadísticas en Tiempo Real")
         realtime_stats.setStyleSheet("""
@@ -478,13 +495,11 @@ class SystemInfoApp(QMainWindow):
             margin-top: 20px;
             margin-bottom: 10px;
         """)
-        main_layout.addWidget(realtime_stats)
-        
+        layout.addWidget(realtime_stats)
+
         # Widgets de estadísticas
         self.stats_widget = QWidget()
         self.stats_layout = QHBoxLayout(self.stats_widget)
-        
-        # Uso de CPU
         self.cpu_usage = QLabel()
         self.cpu_usage.setStyleSheet("""
             background-color: #3498db;
@@ -493,8 +508,6 @@ class SystemInfoApp(QMainWindow):
             border-radius: 8px;
             font-weight: bold;
         """)
-        
-        # Uso de Memoria
         self.mem_usage = QLabel()
         self.mem_usage.setStyleSheet("""
             background-color: #e67e22;
@@ -503,16 +516,13 @@ class SystemInfoApp(QMainWindow):
             border-radius: 8px;
             font-weight: bold;
         """)
-        
         self.stats_layout.addWidget(self.cpu_usage)
         self.stats_layout.addWidget(self.mem_usage)
-        main_layout.addWidget(self.stats_widget)
-        
-        layout.addWidget(main_content)
-        self.stacked_widget.setCurrentWidget(self.system_info_page)
+        layout.addWidget(self.stats_widget)
 
-        # Actualizar estadísticas en tiempo real inmediatamente
+        self.stacked_widget.setCurrentWidget(self.system_info_page)
         self.update_realtime_stats()
+
 
     def show_comanda_win(self):
         """Muestra la vista de Comandos Windows"""
