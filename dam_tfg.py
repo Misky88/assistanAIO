@@ -5,14 +5,16 @@ import sys
 import psutil
 import random
 import string
+import requests
 from PyQt6.QtCore import QSize, Qt, QTimer, QUrl
-from PyQt6.QtGui import QIcon, QFont, QDesktopServices
+from PyQt6.QtGui import QIcon, QFont, QDesktopServices, QPixmap
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, QWidget,
                              QVBoxLayout, QHBoxLayout, QLabel, QFrame, QStackedWidget,
                              QLineEdit, QSpacerItem, QSizePolicy, QMessageBox,
                              QTableWidget, QTableWidgetItem, QAbstractItemView)
 from PyQt6.QtGui import QDesktopServices
 from PyQt6.QtCore import QUrl
+from io import BytesIO
 
 from app_backup import BackupApp
 from chocolatey import PackageApp
@@ -279,31 +281,77 @@ class SystemInfoApp(QMainWindow):
         layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
     def load_system_info(self):
-        """Carga y procesa la información del sistema"""
         try:
-            self.system_data = {
-                'os': f"{platform.system()} {platform.release()}",
-                'hostname': platform.node(),
-                'processor': platform.processor() or "Desconocido",
-                'cores': psutil.cpu_count(logical=False),
-                'threads': psutil.cpu_count(logical=True),
-                'ram': f"{psutil.virtual_memory().total / (1024**3):.2f} GB",
-                'cpu_freq': f"{(psutil.cpu_freq().current or 0) / 1000:.2f} GHz",
-                'architecture': platform.machine()
-            }
+            import wmi
+            c = wmi.WMI()
+            # Procesador
+            cpu_name = next((cpu.Name.strip() for cpu in c.Win32_Processor()), None)
+            # GPU principal
+            gpu_name = next((gpu.Name.strip() for gpu in c.Win32_VideoController()), "No detectada")
+            # Batería
+            battery = next(iter(c.Win32_Battery()), None)
+            battery_percent = f"{battery.EstimatedChargeRemaining}%" if battery else "No disponible"
+            battery_status = "Cargando" if battery and getattr(battery, "BatteryStatus", 0) == 6 else "No cargando"
         except Exception as e:
-            print(f"Error obteniendo información del sistema: {e}")
-            self.system_data = {
-                'os': "No disponible",
-                'hostname': "No disponible",
-                'processor': "No disponible",
-                'cores': 0,
-                'threads': 0,
-                'ram': "0 GB",
-                'cpu_freq': "0 GHz",
-                'architecture': "No disponible"
-            }
+            print(f"Error usando wmi: {e}")
+            cpu_name = platform.processor() or platform.uname().processor or "Desconocido"
+            gpu_name = "No detectada"
+            battery_percent = "No disponible"
+            battery_status = "No disponible"
 
+        # Almacenamiento
+        try:
+            disk = psutil.disk_usage('/')
+            disk_total = f"{disk.total / (1024**3):.1f} GB"
+            disk_used = f"{disk.used / (1024**3):.1f} GB"
+            disk_free = f"{disk.free / (1024**3):.1f} GB"
+        except Exception:
+            disk_total = disk_used = disk_free = "No disponible"
+
+        # Red
+        try:
+            addrs = psutil.net_if_addrs()
+            ip = None
+            for iface, addr_list in addrs.items():
+                for addr in addr_list:
+                    if addr.family == 2 and not addr.address.startswith("169.254"):
+                        ip = addr.address
+                        iface_name = iface
+                        break
+                if ip:
+                    break
+            if not ip:
+                ip, iface_name = "No disponible", "No disponible"
+        except Exception:
+            ip, iface_name = "No disponible", "No disponible"
+
+        # Arquitectura
+        arch = platform.machine()
+        if arch.upper() == "AMD64":
+            arch = "64 bits"
+
+        # Marca para logo/avatar
+        manufacturer, _ = get_pc_brand()
+        self.system_data = {
+            'os': f"{platform.system()} {platform.release()}",
+            'hostname': platform.node(),
+            'processor': cpu_name,
+            'gpu': gpu_name,
+            'cores': psutil.cpu_count(logical=False),
+            'threads': psutil.cpu_count(logical=True),
+            'ram': f"{psutil.virtual_memory().total / (1024**3):.2f} GB",
+            'cpu_freq': f"{(psutil.cpu_freq().current or 0) / 1000:.2f} GHz",
+            'architecture': arch,
+            'disk_total': disk_total,
+            'disk_used': disk_used,
+            'disk_free': disk_free,
+            'ip': ip,
+            'iface': iface_name,
+            'battery_percent': battery_percent,
+            'battery_status': battery_status,
+            'datetime': "",
+            'manufacturer': manufacturer
+        }
     def create_info_row(self, title, value):
         widget = QWidget()
         layout = QHBoxLayout(widget)
@@ -352,16 +400,70 @@ class SystemInfoApp(QMainWindow):
         main_content = QWidget()
         main_layout = QVBoxLayout(main_content)
         
-        # Agregar filas de información
+        # Logo/avatar según marca
+        logo_label = QLabel()
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        logo_path = None
+        manufacturer = self.system_data['manufacturer'].lower()  # Asegura minúsculas
+
+        print("DEBUG manufacturer:", manufacturer)  # Quita esto cuando funcione
+
+        if "lenovo" in manufacturer:
+            logo_path = os.path.join(os.path.dirname(__file__), "images", "Branding_lenovo-logo_lenovologoposred_low_res.png")
+        elif "asus" in manufacturer:
+            logo_path = os.path.join(os.path.dirname(__file__), "images", "ASUS_Corporate_Logo.png")
+        elif "hp" in manufacturer:
+            logo_path = os.path.join(os.path.dirname(__file__), "images", "HP_logo_2008.png")
+        # ...añade más marcas si tienes más logos...
+
+        if logo_path and os.path.exists(logo_path):
+            pixmap = QPixmap(logo_path)
+            logo_label.setPixmap(pixmap.scaled(80, 80, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+        else:
+            logo_label.setText("🖥️")
+            logo_label.setStyleSheet("font-size: 48px;")
+
+        main_layout.addWidget(logo_label)
+
+        # Información básica
         main_layout.addWidget(self.create_info_row("Sistema Operativo:", self.system_data['os']))
         main_layout.addWidget(self.create_info_row("Nombre del Equipo:", self.system_data['hostname']))
         main_layout.addWidget(self.create_info_row("Procesador:", self.system_data['processor']))
+        main_layout.addWidget(self.create_info_row("GPU:", self.system_data['gpu']))
         main_layout.addWidget(self.create_info_row("Arquitectura:", self.system_data['architecture']))
         main_layout.addWidget(self.create_info_row("Núcleos Físicos:", self.system_data['cores']))
         main_layout.addWidget(self.create_info_row("Núcleos Lógicos:", self.system_data['threads']))
         main_layout.addWidget(self.create_info_row("Frecuencia CPU:", self.system_data['cpu_freq']))
         main_layout.addWidget(self.create_info_row("Memoria RAM:", self.system_data['ram']))
-        
+
+        # Almacenamiento
+        main_layout.addWidget(self.create_info_row("Disco total:", self.system_data['disk_total']))
+        main_layout.addWidget(self.create_info_row("Disco usado:", self.system_data['disk_used']))
+        main_layout.addWidget(self.create_info_row("Disco libre:", self.system_data['disk_free']))
+
+        # Red
+        main_layout.addWidget(self.create_info_row("IP local:", self.system_data['ip']))
+        main_layout.addWidget(self.create_info_row("Adaptador de red:", self.system_data['iface']))
+
+        # Batería
+        main_layout.addWidget(self.create_info_row("Batería:", f"{self.system_data['battery_percent']} ({self.system_data['battery_status']})"))
+
+        # Fecha y hora actual
+        from datetime import datetime
+        now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        main_layout.addWidget(self.create_info_row("Fecha y hora:", now))
+
+        # Enlaces rápidos
+        links_widget = QWidget()
+        links_layout = QHBoxLayout(links_widget)
+        btn_taskmgr = QPushButton("Administrador de tareas")
+        btn_taskmgr.clicked.connect(lambda: os.system("start taskmgr"))
+        btn_settings = QPushButton("Configuración")
+        btn_settings.clicked.connect(lambda: os.system("start ms-settings:"))
+        links_layout.addWidget(btn_taskmgr)
+        links_layout.addWidget(btn_settings)
+        main_layout.addWidget(links_widget)
+
         # Separador
         separator = QFrame()
         separator.setFrameShape(QFrame.Shape.HLine)
@@ -495,7 +597,7 @@ class SystemInfoApp(QMainWindow):
             ("Supermicro", "https://www.supermicro.com/support/resources/downloadcenter"),
             ("Dell", "https://www.dell.com/support/home/drivers"),
             ("HP", "https://support.hp.com/us-en/drivers"),
-            ("Lenovo", "https://pcsupport.lenovo.com/us/en/downloads"),
+            ("Lenovo", "https://pcsupport.lenovo.com/es/es/pagenotfound"),
             ("Acer", "https://www.acer.com/ac/en/US/content/drivers"),
             ("Gigabyte Aorus", "https://www.aorus.com/support/download/"),
             ("Alienware", "https://www.dell.com/support/home/drivers"),
