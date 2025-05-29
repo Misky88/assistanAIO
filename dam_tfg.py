@@ -7,6 +7,7 @@ import random
 import string
 import requests
 from PyQt6.QtCore import QSize, Qt, QTimer, QUrl
+from datetime import datetime
 from PyQt6.QtWidgets import QScrollArea
 from PyQt6.QtGui import QIcon, QFont, QDesktopServices, QPixmap
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, QWidget,
@@ -47,10 +48,11 @@ class SystemInfoApp(QMainWindow):
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.main_layout = QHBoxLayout(self.central_widget)
-        self.main_layout.setContentsMargins(0, 0, 0, 0)
-        
+        self.main_layout.setContentsMargins(0, 0, 0, 0)  
         self.setup_sidebar()
         self.setup_main_content()
+        self.datetime_label = QLabel(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+        self.datetime_label.setStyleSheet("color: #7f8c8d;")
         
         # Cargar datos iniciales
         self.load_system_info()
@@ -60,6 +62,15 @@ class SystemInfoApp(QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_realtime_stats)
         self.timer.start(400)  # Actualizar cada segundo
+
+    def update_realtime_stats(self):
+        self.cpu_usage.setText(f"CPU: {psutil.cpu_percent()}%")
+        mem = psutil.virtual_memory()
+        self.mem_usage.setText(f"RAM: {mem.percent}%")
+        from datetime import datetime
+        if hasattr(self, "datetime_label"):
+            self.datetime_label.setText(datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
+
 
     def setup_sidebar(self):
         """Configura la barra lateral con estilos y botones"""
