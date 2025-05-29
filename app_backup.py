@@ -8,7 +8,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel,
     QCheckBox, QComboBox, QLineEdit, QMessageBox, QListWidget,
-    QProgressBar, QTabWidget, QHBoxLayout, QDateTimeEdit
+    QProgressBar, QTabWidget, QHBoxLayout, QDateTimeEdit, QSizePolicy
 )
 from PyQt6.QtCore import QDateTime, QTime
 from PyQt6.QtGui import QIcon
@@ -40,8 +40,8 @@ class BackupApp(QWidget):
         
         self.setWindowTitle("🛡 Backups B2C")
         self.setWindowIcon(QIcon('icon.png'))
-        self.setMinimumSize(800, 500)
-        self.setMaximumSize(800, 500)
+        # self.setMinimumSize(800, 500)  # (opcional, solo si quieres un tamaño inicial mínimo)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
         layout = QVBoxLayout(self)
         self.setLayout(layout)
