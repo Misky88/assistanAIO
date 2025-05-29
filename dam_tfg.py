@@ -1,22 +1,36 @@
-
 import sys
-import platform
-import psutil
 import os
+import platform
+import sys
+import psutil
+import random
+import string
+from PyQt6.QtCore import QSize, Qt, QTimer, QUrl
+from PyQt6.QtGui import QIcon, QFont, QDesktopServices
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, QWidget,
-                             QVBoxLayout, QHBoxLayout, QLabel, QGridLayout, 
-                             QFrame, QStackedWidget, QTabWidget, QLineEdit, QListWidget
+                             QVBoxLayout, QHBoxLayout, QLabel, QFrame, QStackedWidget,
                              QLineEdit, QSpacerItem, QSizePolicy, QMessageBox,
                              QTableWidget, QTableWidgetItem, QAbstractItemView)
-from PyQt6.QtGui import QIcon, QFont, QDesktopServices
-from PyQt6.QtCore import QSize, Qt, QTimer, QUrl
 from PyQt6.QtGui import QDesktopServices
 from PyQt6.QtCore import QUrl
-from comandowin import ComandaWin  # Importar la clase ComandaWin
-from chocolatey import ChocolateyApp
+
 from app_backup import BackupApp
+from chocolatey import PackageApp
+from comandowin import ComandaWin
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+def get_pc_brand():
+    try:
+        import wmi
+        c = wmi.WMI()
+        for system in c.Win32_ComputerSystem():
+            manufacturer = system.Manufacturer.strip().lower()
+            model = system.Model.strip().lower()
+            return manufacturer, model
+    except Exception:
+        uname = platform.uname()
+        return uname.system.lower(), uname.node.lower()
 
 class SystemInfoApp(QMainWindow):
     def __init__(self):
@@ -43,18 +57,6 @@ class SystemInfoApp(QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_realtime_stats)
         self.timer.start(400)  # Actualizar cada segundo
-    
-    def get_pc_brand():
-    try:
-        import wmi
-        c = wmi.WMI()
-        for system in c.Win32_ComputerSystem():
-            manufacturer = system.Manufacturer.strip().lower()
-            model = system.Model.strip().lower()
-            return manufacturer, model
-    except Exception:
-        uname = platform.uname()
-        return uname.system.lower(), uname.node.lower()
 
     def setup_sidebar(self):
         """Configura la barra lateral con estilos y botones"""
@@ -84,7 +86,6 @@ class SystemInfoApp(QMainWindow):
                 background-color: #34495e;
             }
         """)
-        self.btn_drivers.clicked.connect(self.show_drivers_ui)
         self.btn_home.clicked.connect(self.show_system_info)
         sidebar_layout.addWidget(self.btn_home)
 
@@ -123,6 +124,7 @@ class SystemInfoApp(QMainWindow):
                 background-color: #34495e;
             }
         """)
+        self.btn_drivers.clicked.connect(self.show_drivers_ui)
         sidebar_layout.addWidget(self.btn_drivers)
 
         # Botón de Comandos Windows
@@ -162,6 +164,26 @@ class SystemInfoApp(QMainWindow):
         """)
         self.btn_backups.clicked.connect(self.show_backups_ui)
         sidebar_layout.addWidget(self.btn_backups)
+
+        # Botón de Registro
+        self.btn_register = QPushButton("Registro")
+        self.btn_register.setIcon(QIcon.fromTheme("contact-new"))# Usa aquí el nombre de tu imagen
+        self.btn_register.setIconSize(QSize(24, 24))
+        self.btn_register.setStyleSheet("""
+            QPushButton {
+                color: white;
+                text-align: left;
+                padding: 10px;
+                border: none;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #34495e;
+            }
+        """)
+        self.btn_register.clicked.connect(self.show_register_ui)
+        sidebar_layout.addWidget(self.btn_register)
+
         sidebar_layout.addStretch()
         self.main_layout.addWidget(sidebar)
 
@@ -173,15 +195,9 @@ class SystemInfoApp(QMainWindow):
         # Página de información del sistema (INICIO)
         self.system_info_page = QWidget()
         self.stacked_widget.addWidget(self.system_info_page)
-
-        # Página de Drivers
-        self.drivers_page = QWidget()
-        self.setup_drivers_page()
-        self.stacked_widget.addWidget(self.drivers_page)
-    
-       
+        
         # Página de Aplicaciones (Aplicaciones)
-        self.applications_page = ChocolateyApp()
+        self.applications_page = PackageApp()
         self.stacked_widget.addWidget(self.applications_page)
         
         # Página de Comandos Windows
@@ -192,20 +208,75 @@ class SystemInfoApp(QMainWindow):
         self.backups_page = BackupApp()
         self.stacked_widget.addWidget(self.backups_page)
         
-     def setup_register_page(self):
-        layout = QVBoxLayout(self.register_page)
-        layout = QVBoxLayout(self.register_page)
-        layout.setContentsMargins(60, 60, 60, 60)
-        layout.setContentsMargins(60, 60, 60, 60)
-
-    def show_register_ui(self):
-        self.stacked_widget.setCurrentWidget(self.register_page)
-        self.stacked_widget.setCurrentWidget(self.register_page)
-    
-    def show_drivers_ui(self):
-        self.stacked_widget.setCurrentWidget(self.drivers_page)
-       
+        # Página de Registro
+        self.register_page = QWidget()
+        self.setup_register_page()
+        self.stacked_widget.addWidget(self.register_page)
         
+        # Página de Drivers
+        self.drivers_page = QWidget()
+        self.setup_drivers_page()
+        self.stacked_widget.addWidget(self.drivers_page)
+        
+    def setup_register_page(self):
+        layout = QVBoxLayout(self.register_page)
+        layout.setContentsMargins(60, 60, 60, 60)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        # Título centrado
+        title = QLabel("Registro Assistant AIO")
+        title.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        title.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
+        title.setStyleSheet("color: #2c3e50; margin-bottom: 30px;")
+        layout.addWidget(title)
+
+        # Correo electrónico
+        email_label = QLabel("Correo Electrónico:")
+        email_label.setStyleSheet("font-weight: bold; color: #34495e;")
+        self.email_input = QLineEdit()
+        self.email_input.setPlaceholderText("Introduce tu correo electrónico")
+        self.email_input.setMinimumHeight(32)
+        layout.addWidget(email_label)
+        layout.addWidget(self.email_input)
+
+        # Contraseña
+        password_label = QLabel("Contraseña:")
+        password_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        self.password_input = QLineEdit()
+        self.password_input.setPlaceholderText("Introduce tu contraseña")
+        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.password_input.setMinimumHeight(32)
+        layout.addWidget(password_label)
+        layout.addWidget(self.password_input)
+
+        # Licencia
+        license_label = QLabel("Licencia:")
+        license_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        self.license_input = QLineEdit()
+        self.license_input.setReadOnly(True)
+        self.license_input.setMinimumHeight(32)
+        layout.addWidget(license_label)
+        layout.addWidget(self.license_input)
+
+        # Botón Generar Licencia
+        self.btn_generate_license = QPushButton("Generar Licencia")
+        self.btn_generate_license.setStyleSheet("""
+            QPushButton {
+                background-color: #2980b9;
+                color: white;
+                padding: 10px;
+                border-radius: 5px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #3498db;
+            }
+        """)
+        self.btn_generate_license.clicked.connect(self.generate_license)
+        layout.addWidget(self.btn_generate_license)
+
+        # Espaciador
+        layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
     def load_system_info(self):
         """Carga y procesa la información del sistema"""
@@ -234,18 +305,17 @@ class SystemInfoApp(QMainWindow):
             }
 
     def create_info_row(self, title, value):
-        """Crea una fila de información con estilos"""
         widget = QWidget()
         layout = QHBoxLayout(widget)
         layout.setContentsMargins(10, 5, 10, 5)
-        
+
         title_label = QLabel(title)
         title_label.setStyleSheet("font-weight: bold; color: #34495e;")
         title_label.setFixedWidth(200)
-        
+
         value_label = QLabel(str(value))
         value_label.setStyleSheet("color: #7f8c8d;")
-        
+
         layout.addWidget(title_label)
         layout.addWidget(value_label)
         return widget
@@ -347,8 +417,7 @@ class SystemInfoApp(QMainWindow):
         self.stacked_widget.setCurrentWidget(self.comanda_win_page)
 
     def show_chocolatey_ui(self):
-        """Muestra la vista de Chocolatey"""
-        self.stacked_widget.setCurrentWidget(self.chocolatey_page)
+        self.stacked_widget.setCurrentWidget(self.applications_page)
 
     def show_applications_ui(self):
         """Muestra la vista de Aplicaciones"""
@@ -358,16 +427,23 @@ class SystemInfoApp(QMainWindow):
         """Muestra la vista de Backups"""
         self.stacked_widget.setCurrentWidget(self.backups_page)
 
+    def show_register_ui(self):
+        self.stacked_widget.setCurrentWidget(self.register_page)
+
+    def show_drivers_ui(self):
+        self.stacked_widget.setCurrentWidget(self.drivers_page)
+
+    def generate_license(self):
+        license_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=20))
+        self.license_input.setText(license_code)
 
     def update_realtime_stats(self):
         """Actualiza las estadísticas en tiempo real"""
-        self.cpu_usage.setText(f"CPU: {psutil.cpu_percent()}%")
+        self.cpu_usage.setText(f"CPU: {psutil.cpu_percent()}%") 
         mem = psutil.virtual_memory()
         self.mem_usage.setText(f"RAM: {mem.percent}%")
-    
-    
 
-     def setup_drivers_page(self):
+    def setup_drivers_page(self):
         layout = QVBoxLayout(self.drivers_page)
         layout.setContentsMargins(30, 30, 30, 30)
         title = QLabel("Descarga tus Drivers")
@@ -482,3 +558,4 @@ if __name__ == "__main__":
     
     window = SystemInfoApp()
     window.show()
+    app.exec()
