@@ -5,14 +5,14 @@ import os
 import ctypes
 import time
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QHBoxLayout,
-    QLineEdit, QListWidget, QFileDialog, QWidget, QTabWidget, QListWidgetItem,
-    QFrame, QSizePolicy, QSpacerItem, QComboBox, QDialog,
+    QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
+    QLineEdit, QListWidget, QTextEdit, QFileDialog, QWidget, QTabWidget, QListWidgetItem,
+    QFrame, QSizePolicy, QSpacerItem, QComboBox, QDialog, QVBoxLayout, QLabel, QDialog, 
     QVBoxLayout, QLabel, QPushButton, QTextEdit, QMessageBox,
 )
 from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal
 from PyQt6.QtGui import QFont, QGuiApplication
-from PyQt6.QtWidgets import QProgressBar
+from PyQt6.QtWidgets import QPlainTextEdit, QProgressBar
 
 # DEPENDENCIAS NECESARIAS PARA LA OPCION DE INSTALAR CHOCOLATEY AUTOMATICAMENTE
 # from PyQt6.QtWidgets import QProgressBar
@@ -20,7 +20,7 @@ from PyQt6.QtWidgets import QProgressBar
 # from PyQt6.QtGui import QIcon
 
 
-class PackageApp(QWidget):
+class PackageApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Package App Manager")
@@ -30,7 +30,6 @@ class PackageApp(QWidget):
         self.group_dict = {}
         self.package_manager = 'winget'
         self.setup_ui()
-
         self.tabs.currentChanged.connect(self.on_tab_changed)
 
     def on_tab_changed(self, index):
@@ -83,7 +82,6 @@ class PackageApp(QWidget):
         """
 
 
-
     def create_frame(self):
         frame = QFrame()
         frame.setFrameShape(QFrame.Shape.StyledPanel)
@@ -91,19 +89,6 @@ class PackageApp(QWidget):
 
 
     def setup_ui(self):
-        # Crear layout principal
-        layout = QVBoxLayout(self)
-        self.setLayout(layout)
-        
-        # Crear título centrado
-        header = QLabel("🧩 Gestor de Aplicaciones")
-        header.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
-        header.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        header.setStyleSheet("color: #2c3e50; margin-bottom: 10px;")
-
-        # Añadir al layout
-        layout.addWidget(header)
-
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet("""
             QTabWidget::pane {
@@ -134,7 +119,7 @@ class PackageApp(QWidget):
         self.tabs.addTab(self.create_group_tab(), "📦 Agrupaciones")
         self.tabs.addTab(self.create_manage_tab(), "🛠️ Actualizar/Desinstalar")
         self.tabs.addTab(self.create_log_tab(), "📝 Historial")
-        layout.addWidget(self.tabs)
+        self.setCentralWidget(self.tabs)
 
 
     def create_title_label(self, text):
@@ -479,8 +464,8 @@ class PackageApp(QWidget):
     def create_search_tab(self):
         tab = QWidget()
         layout = QVBoxLayout(tab)
-        layout.addWidget(self.create_title_label("🔍 Buscar e Instalar Aplicaciones"))
 
+        layout.addWidget(self.create_title_label("Buscar e Instalar Aplicaciones"))
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("Escribe el nombre de una aplicación...")
 
@@ -1472,7 +1457,7 @@ class ProgressDialog(QDialog):
             self.cancel_button.clicked.connect(self.cancelar_instalacion)
             layout.addWidget(self.cancel_button)
 
-        self.thread.progreso.connect(self.actualizar_mensaje) # type: ignore
+        self.thread.progreso.connect(self.actualizar_mensaje)
         self.thread.finalizado.connect(self.finalizar_y_notificar)
         self.thread.cancelado.connect(self.actualizar_mensaje)
 
@@ -1558,7 +1543,6 @@ class InstallGroupThread(QThread):
     progreso = pyqtSignal(str)
     finalizado = pyqtSignal()
     cancelado = pyqtSignal(str)
-
 
     def __init__(self, group_dict, package_manager):
         super().__init__()
@@ -1753,7 +1737,6 @@ class UpdateAllThread(QThread):
 
     def cancelar(self):
         self._cancelar = True
-
 
 
 if __name__ == "__main__":
