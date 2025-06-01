@@ -1,3 +1,4 @@
+import ctypes
 import sys
 import os
 import platform
@@ -5,7 +6,7 @@ import sys
 import psutil
 import random
 import string
-import requests
+
 from PyQt6.QtCore import QSize, Qt, QTimer, QUrl
 from datetime import datetime
 from PyQt6.QtWidgets import QScrollArea
@@ -699,13 +700,23 @@ class SystemInfoApp(QMainWindow):
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    app.setStyle("Fusion")
+    if not ctypes.windll.shell32.IsUserAnAdmin():
+        # Relaunch the script with admin rights
+        import sys
+        import os
+        params = " ".join([f'"{x}"' for x in sys.argv])
+        ctypes.windll.shell32.ShellExecuteW(
+            None, "runas", sys.executable, f'"{__file__}" {params}', None, 1
+        )
+        sys.exit()
+    else:
+        app = QApplication(sys.argv)
+        app.setStyle("Fusion")
     
-    font = QFont()
-    font.setFamily("Segoe UI")
-    font.setPointSize(10)
-    app.setFont(font)
+        font = QFont()
+        font.setFamily("Segoe UI")
+        font.setPointSize(10)
+        app.setFont(font)
     
     window = SystemInfoApp()
     window.show()
