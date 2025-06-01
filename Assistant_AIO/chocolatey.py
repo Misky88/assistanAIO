@@ -3,6 +3,7 @@ import json
 import re
 import os
 import ctypes
+import time
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
     QLineEdit, QListWidget, QTextEdit, QFileDialog, QWidget, QTabWidget, QListWidgetItem,
@@ -553,7 +554,7 @@ class PackageApp(QMainWindow):
 
         try:
             result = subprocess.run(
-                ["winget", "list"],
+                ["winget", "list", "--source", "winget"],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -895,6 +896,8 @@ class PackageApp(QMainWindow):
         app_name = selected_item.text()
         row = self.group_list.row(selected_item)
         self.group_list.takeItem(row)
+        if app_name in self.group_dict:
+            del self.group_dict[app_name]
         self.log_text.append(f"'{app_name}' eliminado de la agrupación.")
         self.show_toast("Eliminado de la agrupacion")
 
@@ -909,10 +912,16 @@ class PackageApp(QMainWindow):
         file_path, _ = file_dialog.getSaveFileName(self, "Exportar Agrupación", "", "JSON Files (*.json)")
         if file_path:
             try:
-                with open(file_path, "w") as file:
-                    json.dump(self.group_dict, file, indent=4)
+                data_to_export = {
+                    "package": self.package_manager,
+                    "apps": self.group_dict
+                }
+
+                with open(file_path, "w", encoding="utf-8") as file:
+                    json.dump(data_to_export, file, indent=4)
+
                 self.log_text.append(f"Agrupación exportada a {file_path}.")
-                self.show_toast("Agrupacion exportada con éxito")
+                self.show_toast("Agrupación exportada con éxito")
             except Exception as e:
                 self.log_text.append(f"Error al exportar agrupación: {e}")
 
@@ -926,15 +935,26 @@ class PackageApp(QMainWindow):
                 with open(file_path, "r") as file:
                     imported = json.load(file)
 
-                self.group_list.clear()
-                self.group_dict.clear()
+                if "apps" in imported and "package" in imported:
+                    if imported["package"] != self.package_manager:
+                        QMessageBox.warning(
+                            self,
+                            "Gestor de Paquetes Incompatible",
+                            f"La agrupación fue creada usando '{imported['package']}', pero actualmente tienes seleccionado '{self.package_manager}'.\n\nCambia el gestor para poder instalar esta agrupación."
+                        )
+                        return
 
-                for name, app_id in imported.items():
-                    self.group_list.addItem(name)
-                    self.group_dict[name] = app_id
+                    self.group_list.clear()
+                    self.group_dict.clear()
 
-                self.log_text.append(f"Agrupación importada desde {file_path}.")
-                self.show_toast("Agrupacion imporada con éxito")
+                    for name, app_id in imported["apps"].items():
+                        self.group_list.addItem(name)
+                        self.group_dict[name] = app_id
+
+                    self.log_text.append(f"Agrupación importada desde {file_path}.")
+                    self.show_toast("Agrupacion importada con éxito")
+                else:
+                    self.log_text.append("El archivo JSON no tiene el formato esperado.")
 
             except Exception as e:
                 self.log_text.append(f"Error al importar agrupación: {e}")
@@ -964,12 +984,13 @@ class PackageApp(QMainWindow):
         self.log_text.append("Instalando la agrupacion...")
 
         for app_name, app_id in self.group_dict.items():
+            print("Llega aqui")
             self.log_text.append(f"Instalando '{app_name}' (ID: {app_id})...")
             try:
-                # subprocess.run(
-                #     ["winget", "install", "--id", app_id, "-e", "--accept-package-agreements", "--accept-source-agreements"],
-                #     check=True
-                # )
+                subprocess.run(
+                    ["winget", "install", "--id", app_id, "-e", "--accept-package-agreements", "--accept-source-agreements"],
+                    check=True
+                )
                 self.log_text.append(f"'{app_name}' instalado correctamente.")
             except subprocess.CalledProcessError as e:
                 self.log_text.append(f"Error al instalar '{app_name}': {e}")
@@ -1423,6 +1444,7 @@ class ProgressDialog(QDialog):
         self.mensaje_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.mensaje_label)
 
+
         self.progress_bar = QProgressBar()
         if total:
             self.progress_bar.setRange(0, total)
@@ -1439,10 +1461,12 @@ class ProgressDialog(QDialog):
         self.thread.finalizado.connect(self.finalizar_y_notificar)
         self.thread.cancelado.connect(self.actualizar_mensaje)
 
-        self.thread.start()
+        print("🟢 Layout listo, arrancando hilo...")
+        QTimer.singleShot(500, self.thread.start)
 
     def actualizar_mensaje(self, texto):
         self.mensaje_label.setText(texto)
+        self.mensaje_label.repaint()
         if self.total:
             self.pasos += 1
             self.progress_bar.setValue(self.pasos)
@@ -1494,7 +1518,7 @@ class SuccessDialog(QDialog):
             }
         """)
 
-        layout = QVBoxLayout()
+        layout = QVBoxLayout(self)
 
         titulo = QLabel("✅ Acción completada")
         titulo.setObjectName("titulo")
@@ -1529,7 +1553,6 @@ class InstallGroupThread(QThread):
     def run(self):
         total = len(self.group_dict)
         actual = 1
-
         for app_name, app_id in self.group_dict.items():
             if self._cancelar:
                 self.cancelado.emit("Instalación cancelada. No se instalarán más paquetes.")
@@ -1538,14 +1561,15 @@ class InstallGroupThread(QThread):
             self.progreso.emit(f"[{actual}/{total}] Instalando '{app_name}'...")
 
             try:
-                # if self.package_manager == "winget":
-                #     cmd = ["winget", "install", "--id", app_id, "-e", "--accept-package-agreements", "--accept-source-agreements"]
-                #     subprocess.run(cmd, check=True)
-                # else:
-                #     cmd = ["choco", "install", app_id, "-y"]
-                #     subprocess.run(cmd, check=True, shell=True)
+                if self.package_manager == "winget":
+                    cmd = ["winget", "install", "--id", app_id, "-e", "--accept-package-agreements", "--accept-source-agreements"]
+                    subprocess.run(cmd, check=True)
+                else:
+                    cmd = ["choco", "install", app_id, "-y"]
+                    subprocess.run(cmd, check=True, shell=True)
 
                 self.progreso.emit(f"'{app_name}' instalado correctamente.")
+                time.sleep(0.5)
             except subprocess.CalledProcessError as e:
                 self.progreso.emit(f"Error al instalar '{app_name}': {e}")
 
@@ -1620,7 +1644,10 @@ class UninstallSingleThread(QThread):
                 cmd = ["winget", "uninstall", "--id", self.app_id, "-e"]
                 subprocess.run(cmd, check=True)
             else:
-                cmd = ["choco", "uninstall", self.app_id, "-y", "--accept-license", "--no-progress"]
+                cmd = [
+                    "choco", "uninstall", self.app_id,
+                    "-y", "--accept-license", "--remove-dependencies", "--no-progress"
+                ]
                 subprocess.run(cmd, check=True, shell=True)
 
             if self._cancelar:
@@ -1713,7 +1740,18 @@ class UpdateAllThread(QThread):
 
 
 if __name__ == "__main__":
-    app = QApplication([])
-    window = PackageApp()
-    window.show()
-    app.exec()
+    if __name__ == "__main__":
+        if not ctypes.windll.shell32.IsUserAnAdmin():
+            # Relaunch the script with admin rights
+            import sys
+            import os
+            params = " ".join([f'"{x}"' for x in sys.argv])
+            ctypes.windll.shell32.ShellExecuteW(
+                None, "runas", sys.executable, f'"{__file__}" {params}', None, 1
+            )
+            sys.exit()
+        else:
+            app = QApplication([])
+            window = PackageApp()
+            window.show()
+            app.exec()
