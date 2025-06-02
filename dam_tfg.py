@@ -274,22 +274,38 @@ class SystemInfoApp(QMainWindow):
         layout.addWidget(password_label)
         layout.addWidget(self.password_input)
 
-        # Nombre de Equipo (solo lectura)
-        hostname_label = QLabel("Nombre de Equipo:")
+        # Nombre del equipo (campo oculto)
+        # Nombre del equipo (campo visible y solo lectura)
+        hostname_label = QLabel("Nombre del equipo:")
         hostname_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
         self.hostname_input = QLineEdit()
-        self.hostname_input.setReadOnly(True)
-        self.hostname_input.setText(self.system_data.get('hostname', 'No disponible'))
+        self.hostname_input.setText(platform.node())
+        self.hostname_input.setReadOnly(True)  # Bloquear edición
         self.hostname_input.setMinimumHeight(32)
         layout.addWidget(hostname_label)
         layout.addWidget(self.hostname_input)
 
-        # IP Local (solo lectura)
+        # IP local (campo visible y solo lectura)
         ip_label = QLabel("IP Local:")
         ip_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        # Obtener IP local
+        try:
+            addrs = psutil.net_if_addrs()
+            ip = None
+            for iface, addr_list in addrs.items():
+                for addr in addr_list:
+                    if addr.family == 2 and not addr.address.startswith("169.254"):
+                        ip = addr.address
+                        break
+                if ip:
+                    break
+            if not ip:
+                ip = "No disponible"
+        except Exception:
+            ip = "No disponible"
         self.ip_input = QLineEdit()
-        self.ip_input.setReadOnly(True)
-        self.ip_input.setText(self.system_data.get('ip', 'No disponible'))
+        self.ip_input.setText(ip)
+        self.ip_input.setReadOnly(True)  # Bloquear edición
         self.ip_input.setMinimumHeight(32)
         layout.addWidget(ip_label)
         layout.addWidget(self.ip_input)
@@ -753,7 +769,15 @@ class SystemInfoApp(QMainWindow):
             QDesktopServices.openUrl(QUrl(url))
 
     def register_user(self):
-        QMessageBox.information(self, "Registro", "El usuario ha sido registrado correctamente.")
+        email = self.email_input.text()
+        password = self.password_input.text()
+        license_code = self.license_input.text()
+        hostname = self.hostname_input.text()
+        ip_local = self.ip_input.text()
+        # Aquí puedes usar estas variables como necesites
+
+        QMessageBox.information(self, "Registro", f"Usuario registrado.\nEquipo: {hostname}\nIP: {ip_local}")
+
 
 
 if __name__ == "__main__":
