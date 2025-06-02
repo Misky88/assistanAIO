@@ -283,7 +283,9 @@ class SystemInfoApp(QMainWindow):
         layout.addWidget(license_label)
         layout.addWidget(self.license_input)
 
-        # Botón Generar Licencia
+        # Botones "Generar Licencia" y "Registrar"
+        button_layout = QHBoxLayout()
+
         self.btn_generate_license = QPushButton("Generar Licencia")
         self.btn_generate_license.setStyleSheet("""
             QPushButton {
@@ -298,7 +300,25 @@ class SystemInfoApp(QMainWindow):
             }
         """)
         self.btn_generate_license.clicked.connect(self.generate_license)
-        layout.addWidget(self.btn_generate_license)
+        button_layout.addWidget(self.btn_generate_license)
+
+        self.btn_register = QPushButton("Registrar")
+        self.btn_register.setStyleSheet("""
+            QPushButton {
+                background-color: #27ae60;
+                color: white;
+                padding: 10px;
+                border-radius: 5px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #2ecc71;
+            }
+        """)
+        self.btn_register.clicked.connect(self.register_user)  # Método que manejará el registro
+        button_layout.addWidget(self.btn_register)
+
+        layout.addLayout(button_layout)
 
         # Espaciador
         layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
@@ -697,6 +717,9 @@ class SystemInfoApp(QMainWindow):
         if column == 1:
             url = self.table.item(row, column).text()
             QDesktopServices.openUrl(QUrl(url))
+
+    def register_user(self):
+        QMessageBox.information(self, "Registro", "El usuario ha sido registrado correctamente.")
 
 
 if __name__ == "__main__":
