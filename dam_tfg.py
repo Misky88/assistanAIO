@@ -442,7 +442,7 @@ class SystemInfoApp(QMainWindow):
 
         if logo_path and os.path.exists(logo_path):
             pixmap = QPixmap(logo_path)
-            logo_label.setPixmap(pixmap.scaled(80, 80, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+            logo_label.setPixmap(pixmap.scaled(180, 70, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
         else:
             logo_label.setText("🖥️")
             logo_label.setStyleSheet("font-size: 48px;")
