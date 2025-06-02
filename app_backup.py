@@ -3,14 +3,15 @@ import sys
 import os
 import json
 import logging
+import random
+import string
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QDateTime, QTime
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel,
     QCheckBox, QComboBox, QLineEdit, QMessageBox, QListWidget,
     QProgressBar, QTabWidget, QHBoxLayout, QDateTimeEdit, QSizePolicy
 )
-from PyQt6.QtCore import QDateTime, QTime
 from PyQt6.QtGui import QIcon
 from backup_thread import BackupThread
 
@@ -26,6 +27,7 @@ class BackupApp(QWidget):
     def __init__(self):
         super().__init__()
         self.files = []
+        self.destination = ""  # Inicializar destination
         self.setup_ui()
         self.setup_styles()
         self.thread = None
@@ -40,7 +42,6 @@ class BackupApp(QWidget):
         
         self.setWindowTitle("🛡 Backups B2C")
         self.setWindowIcon(QIcon('icon.png'))
-        # self.setMinimumSize(800, 500)  # (opcional, solo si quieres un tamaño inicial mínimo)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
         layout = QVBoxLayout(self)
@@ -51,9 +52,8 @@ class BackupApp(QWidget):
 
         tab_widget = QTabWidget()
         layout.addWidget(tab_widget)
-    
 
-        # New "Nombre de la Copia" tab
+        # Tab "Nombre de la Copia"
         name_tab = QWidget()
         name_layout = QVBoxLayout()
 
@@ -68,18 +68,31 @@ class BackupApp(QWidget):
         self.previewLabel = QLabel("Vista previa: backup.7z")
         name_layout.addWidget(self.previewLabel)
 
-        # Campo para la descripción del backup (ampliado)
+        # Campo para la descripción del backup
         self.descriptionField = QLineEdit()
         self.descriptionField.setPlaceholderText("Descripción del backup (opcional)")
-        self.descriptionField.setMinimumHeight(50)  # Ampliar el tamaño del campo
+        self.descriptionField.setMinimumHeight(50)
         name_layout.addWidget(QLabel("Descripción:"))
         name_layout.addWidget(self.descriptionField)
 
-        # Nuevo apartado: Tipo de Respaldo
+        # Tipo de Respaldo
         self.backupTypeCombo = QComboBox()
         self.backupTypeCombo.addItems(["Respaldo Completo", "Respaldo Incremental"])
         name_layout.addWidget(QLabel("Tipo de Respaldo:"))
         name_layout.addWidget(self.backupTypeCombo)
+
+        # Carpeta de destino
+        destination_layout = QHBoxLayout()
+        self.destinationField = QLineEdit()
+        self.destinationField.setPlaceholderText("Seleccionar carpeta de destino...")
+        destination_layout.addWidget(self.destinationField)
+        
+        btn_select_destination = QPushButton("📁 Seleccionar")
+        btn_select_destination.clicked.connect(self.select_destination)
+        destination_layout.addWidget(btn_select_destination)
+        
+        name_layout.addWidget(QLabel("Carpeta de destino:"))
+        name_layout.addLayout(destination_layout)
 
         # Botón para restablecer valores
         btn_reset = QPushButton("🔄 Restablecer")
@@ -87,9 +100,9 @@ class BackupApp(QWidget):
         name_layout.addWidget(btn_reset)
 
         name_tab.setLayout(name_layout)
-        tab_widget.addTab(name_tab, "Nombre de la Copia") #PRUEBA
+        tab_widget.addTab(name_tab, "Nombre de la Copia")
 
-        # File selection tab
+        # Tab de selección de archivos
         file_tab = QWidget()
         file_layout = QVBoxLayout()
         self.file_list = QListWidget()
@@ -114,13 +127,11 @@ class BackupApp(QWidget):
         btn_remove_selected.clicked.connect(self.remove_selected_item)
         button_layout.addWidget(btn_remove_selected)
 
-        # Añadir el layout horizontal al layout principal
         file_layout.addLayout(button_layout)
-
         file_tab.setLayout(file_layout)
         tab_widget.addTab(file_tab, "Archivos a respaldar")
 
-        # Security tab
+        # Tab de seguridad
         encrypt_tab = QWidget()
         encrypt_layout = QVBoxLayout()
 
@@ -129,7 +140,7 @@ class BackupApp(QWidget):
         self.encryptCheckBox.stateChanged.connect(self.update_security_preview)
         encrypt_layout.addWidget(self.encryptCheckBox)
 
-        # Campo para la contraseña con botón de ver/ocultar y generar
+        # Campo para la contraseña
         password_layout = QHBoxLayout()
         self.passwordField = QLineEdit()
         self.passwordField.setPlaceholderText("Contraseña (Longitud mínima de 12 caracteres.)")
@@ -176,18 +187,18 @@ class BackupApp(QWidget):
 
         self.immutabilityTimeUnitCombo = QComboBox()
         self.immutabilityTimeUnitCombo.addItems(["Días", "Semanas", "Meses", "Años"])
-        self.immutabilityTimeUnitCombo.setEnabled(False)  # Deshabilitado por defecto
+        self.immutabilityTimeUnitCombo.setEnabled(False)
         immutability_time_layout.addWidget(QLabel("Duración de inmutabilidad:"))
         immutability_time_layout.addWidget(self.immutabilityTimeUnitCombo)
 
         self.immutabilityTimeValueCombo = QComboBox()
-        self.immutabilityTimeValueCombo.addItems([str(i) for i in range(1, 11)])  # Números del 1 al 10
-        self.immutabilityTimeValueCombo.setEnabled(False)  # Deshabilitado por defecto
+        self.immutabilityTimeValueCombo.addItems([str(i) for i in range(1, 11)])
+        self.immutabilityTimeValueCombo.setEnabled(False)
         immutability_time_layout.addWidget(self.immutabilityTimeValueCombo)
 
         encrypt_layout.addLayout(immutability_time_layout)
 
-        # Elección del tamaño de las partes
+        # Tamaño de las partes
         self.partSizeCombo = QComboBox()
         self.partSizeCombo.addItems([
             "Sin dividir",
@@ -206,7 +217,7 @@ class BackupApp(QWidget):
         encrypt_tab.setLayout(encrypt_layout)
         tab_widget.addTab(encrypt_tab, "Configuración de seguridad")
 
-        # Activity log tab
+        # Tab de registro de actividad
         log_tab = QWidget()
         log_layout = QVBoxLayout()
 
@@ -217,7 +228,7 @@ class BackupApp(QWidget):
         log_tab.setLayout(log_layout)
         tab_widget.addTab(log_tab, "Registro de actividad")
 
-        # Scheduling tab with updated layout
+        # Tab de programación
         schedule_tab = QWidget()
         schedule_layout = QVBoxLayout()
 
@@ -229,7 +240,7 @@ class BackupApp(QWidget):
         schedule_layout.addWidget(QLabel("Tipo de horario:"))
         schedule_layout.addWidget(self.scheduleTypeCombo)
 
-        # Selección de días de la semana (ordenados horizontalmente)
+        # Selección de días de la semana
         week_days_layout = QHBoxLayout()
         week_days_layout.addWidget(QLabel("Días de la semana:"))
 
@@ -242,7 +253,7 @@ class BackupApp(QWidget):
 
         schedule_layout.addLayout(week_days_layout)
 
-        # Grupo de CheckBoxes para "En el día" (ordenados horizontalmente)
+        # Grupo de CheckBoxes para "En el día"
         day_position_layout = QHBoxLayout()
         day_position_layout.addWidget(QLabel("En el día:"))
 
@@ -302,65 +313,64 @@ class BackupApp(QWidget):
         schedule_tab.setLayout(schedule_layout)
         tab_widget.addTab(schedule_tab, "Programación")
 
-        # Progress
+        # Barra de progreso
         self.progress = QProgressBar()
         self.progress.setVisible(False)
         layout.addWidget(self.progress)
 
-        # Actions
+        # Botón de acción principal
         self.backupButton = QPushButton("🚀 Iniciar backup ahora")
         self.backupButton.clicked.connect(self.start_backup)
         layout.addWidget(self.backupButton)
 
-        self.setLayout(layout)
-
     def setup_styles(self):
         self.setStyleSheet("""
             QWidget {
-        background-color: #f0f3f5;
-        font-family: 'Segoe UI';
-    }
-    QLabel {
-        font-size: 16px;
-    }
-    QPushButton {
-        background-color: #2980b9;
-        color: white;
-        padding: 8px 16px;
-        font-size: 14px;
-        border-radius: 5px;
-    }
-    QPushButton:hover {
-        background-color: #3498db;
-    }
-    QLineEdit {
-        padding: 6px;
-        font-size: 14px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-    }
-    QListWidget {
-        background-color: white;
-        border: 1px solid #dcdcdc;
-        font-size: 14px;
-    }
-    QTextEdit {
-        background-color: #ffffff;
-        font-size: 13px;
-        border: 1px solid #ccc;
-        padding: 6px;
-    }
-    QComboBox {
-        background-color: white;
-        border: 1px solid #ccc;
-        padding: 5px;
-        font-size: 14px;
-        border-radius: 4px;
-    }
-    QCheckBox {
-        font-size: 14px;
-    }
+                background-color: #f0f3f5;
+                font-family: 'Segoe UI';
+            }
+            QLabel {
+                font-size: 16px;
+            }
+            QPushButton {
+                background-color: #2980b9;
+                color: white;
+                padding: 8px 16px;
+                font-size: 14px;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #3498db;
+            }
+            QLineEdit {
+                padding: 6px;
+                font-size: 14px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+            }
+            QListWidget {
+                background-color: white;
+                border: 1px solid #dcdcdc;
+                font-size: 14px;
+            }
+            QComboBox {
+                background-color: white;
+                border: 1px solid #ccc;
+                padding: 5px;
+                font-size: 14px;
+                border-radius: 4px;
+            }
+            QCheckBox {
+                font-size: 14px;
+            }
         """)
+
+    def select_destination(self):
+        """Permite al usuario seleccionar la carpeta de destino."""
+        folder = QFileDialog.getExistingDirectory(self, "Seleccionar Carpeta de Destino")
+        if folder:
+            self.destination = folder
+            self.destinationField.setText(folder)
 
     def select_files(self):
         """Permite al usuario seleccionar archivos para la copia de seguridad."""
@@ -389,9 +399,14 @@ class BackupApp(QWidget):
             self.log_activity("Error: No se seleccionaron archivos para respaldar.")
             return
 
+        if not self.destination:
+            QMessageBox.warning(self, "Error", "Debe seleccionar una carpeta de destino.")
+            self.log_activity("Error: No se seleccionó carpeta de destino.")
+            return
+
         password = self.passwordField.text() if self.encryptCheckBox.isChecked() else None
-        if password and len(password) < 8:
-            QMessageBox.warning(self, "Error", "La contraseña debe tener al menos 8 caracteres.")
+        if password and len(password) < 12:
+            QMessageBox.warning(self, "Error", "La contraseña debe tener al menos 12 caracteres.")
             self.log_activity("Error: Contraseña demasiado corta.")
             return
 
@@ -402,33 +417,46 @@ class BackupApp(QWidget):
             self.log_activity("Error: No se especificó un nombre para el archivo comprimido.")
             return
 
-        # Obtener el tamaño de las partes
+        # Obtener configuraciones
         part_size = self.partSizeCombo.currentText()
-        if part_size == "Sin dividir":
-            part_size_bytes = None
-        else:
-            part_size_bytes = int(part_size.split("M")[0]) * 1024 * 1024  # Convertir a bytes
+        part_size_bytes = None
+        if part_size != "Sin dividir":
+            part_size_bytes = int(part_size.split("M")[0]) * 1024 * 1024
 
         # Configuración de inmutabilidad
         immutable = self.immutableBackupCheckBox.isChecked()
         immutability_duration = None
+        immutability_days = 0
         if immutable:
             time_unit = self.immutabilityTimeUnitCombo.currentText()
             time_value = int(self.immutabilityTimeValueCombo.currentText())
             immutability_duration = f"{time_value} {time_unit}"
+            # Convertir a días para BackupThread
+            if time_unit == "Días":
+                immutability_days = time_value
+            elif time_unit == "Semanas":
+                immutability_days = time_value * 7
+            elif time_unit == "Meses":
+                immutability_days = time_value * 30
+            elif time_unit == "Años":
+                immutability_days = time_value * 365
 
+        # Configurar thread de backup
         self.progress.setVisible(True)
         self.backupButton.setEnabled(False)
+        
         self.thread = BackupThread(
             files=self.files,
             destination=self.destination,
-            part_size=self.part_size,
-            password=self.password,
-            encrypt_filenames=self.encrypt_filenames,
-            immutable=self.immutable,
-            immutability_days=self.immutability_days,
-            encryption_algorithm=self.encryption_algorithm
+            output_name=output_name,
+            part_size=part_size_bytes,
+            password=password,
+            encrypt_filenames=self.metadataEncryptionCheckBox.isChecked(),
+            immutable=immutable,
+            immutability_days=immutability_days,
+            encryption_algorithm=self.encryptionAlgorithmCombo.currentText()
         )
+        
         self.thread.progress.connect(self.update_progress)
         self.thread.finished.connect(self.backup_finished)
         self.thread.start()
@@ -444,10 +472,10 @@ class BackupApp(QWidget):
         
         if success:
             QMessageBox.information(self, "Éxito", message)
-            frequency = self.scheduleCombo.currentText().split(" ")[0]
-            # schedule_backup(frequency, self.files, self.passwordField.text() or None)
+            self.log_activity(f"Backup completado exitosamente: {message}")
         else:
             QMessageBox.critical(self, "Error", message)
+            self.log_activity(f"Error en backup: {message}")
 
     def update_preview(self):
         """Actualiza la vista previa del nombre completo del archivo comprimido."""
@@ -460,20 +488,21 @@ class BackupApp(QWidget):
         """Restablece los valores de los campos en la pestaña 'Nombre de la Copia'."""
         self.outputNameField.clear()
         self.descriptionField.clear()
-        self.backupTypeCombo.setCurrentIndex(0)  # Seleccionar "Respaldo Completo" por defecto
+        self.destinationField.clear()
+        self.destination = ""
+        self.backupTypeCombo.setCurrentIndex(0)
         self.update_preview()
 
     def remove_selected_item(self):
         """Elimina el elemento seleccionado de la lista de archivos y carpetas."""
         selected_item = self.file_list.currentItem()
-        if (selected_item):
+        if selected_item:
             item_text = selected_item.text()
-            # Buscar y eliminar el elemento de la lista interna `self.files`
+            # Buscar y eliminar el elemento de la lista interna
             for file in self.files:
                 if os.path.basename(file) == item_text:
                     self.files.remove(file)
                     break
-            # Actualizar la lista visible
             self.update_file_list()
 
     def validate_password(self):
@@ -501,19 +530,23 @@ class BackupApp(QWidget):
         """Actualiza la vista previa de las configuraciones de seguridad."""
         if self.encryptCheckBox.isChecked():
             algorithm = self.encryptionAlgorithmCombo.currentText()
-            self.securityPreviewLabel.setText(f"Vista previa de seguridad: Encriptación habilitada ({algorithm})")
+            metadata = " y metadatos" if self.metadataEncryptionCheckBox.isChecked() else ""
+            self.securityPreviewLabel.setText(f"Vista previa de seguridad: Encriptación habilitada ({algorithm}{metadata})")
         else:
             self.securityPreviewLabel.setText("Vista previa de seguridad: Encriptación deshabilitada")
 
     def toggle_immutability_options(self):
-        """Habilita o deshabilita las opciones de tiempo de inmutabilidad según el estado del checkbox."""
+        """Habilita o deshabilita las opciones de tiempo de inmutabilidad."""
         is_checked = self.immutableBackupCheckBox.isChecked()
         self.immutabilityTimeUnitCombo.setEnabled(is_checked)
         self.immutabilityTimeValueCombo.setEnabled(is_checked)
 
     def log_activity(self, message: str):
         """Registra una actividad en el log de la interfaz."""
-        self.activityLog.addItem(message)
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        formatted_message = f"[{timestamp}] {message}"
+        self.activityLog.addItem(formatted_message)
         logging.info(message)
 
     def toggle_password_visibility(self):
@@ -527,67 +560,72 @@ class BackupApp(QWidget):
 
     def generate_random_password(self):
         """Genera una contraseña aleatoria y la establece en el campo de contraseña."""
-        import random
-        import string
-
-        length = 12
-        characters = string.ascii_letters + string.digits + string.punctuation
+        length = 16
+        characters = string.ascii_letters + string.digits + "!@#$%^&*()_+-="
         password = ''.join(random.choice(characters) for i in range(length))
         self.passwordField.setText(password)
-
-    def toggle_schedule_options(self):
-        """Habilita o deshabilita las opciones de programación."""
-        is_checked = self.enableScheduleCheckBox.isChecked()
-        self.scheduleCombo.setEnabled(is_checked)
-        self.customSchedulePicker.setEnabled(is_checked)
-        self.advancedFrequencyCombo.setEnabled(is_checked)
-        self.update_schedule_summary()
-
-    def update_schedule_summary(self):
-        """Actualiza el resumen de la programación."""
-        if self.enableScheduleCheckBox.isChecked():
-            summary = f"Programado: {self.scheduleCombo.currentText()}"
-            if self.customSchedulePicker.dateTime().isValid():
-                summary += f" o {self.customSchedulePicker.dateTime().toString()}"
-            self.scheduleSummaryLabel.setText(summary)
-        else:
-            self.scheduleSummaryLabel.setText("Resumen: No programado")
+        self.validate_password()  # Actualizar indicador de fuerza
 
     def export_schedule(self):
         """Exporta la configuración de programación a un archivo JSON."""
         file_path, _ = QFileDialog.getSaveFileName(self, "Exportar programación", "", "JSON Files (*.json)")
         if file_path:
             schedule_data = {
-                "enabled": self.enableScheduleCheckBox.isChecked(),
-                "frequency": self.scheduleCombo.currentText(),
-                "custom_date": self.customSchedulePicker.dateTime().toString(),
-                "advanced_frequency": self.advancedFrequencyCombo.currentText()
+                "schedule_type": self.scheduleTypeCombo.currentText(),
+                "datetime": self.dateTimePicker.dateTime().toString(),
+                "selected_weekdays": [cb.isChecked() for cb in self.weekDaysCheckBoxes],
+                "selected_positions": [cb.isChecked() for cb in self.dayPositionCheckBoxes],
+                "day": self.dayCombo.currentText(),
+                "month": self.monthCombo.currentText()
             }
-            with open(file_path, 'w') as file:
-                json.dump(schedule_data, file)
-            QMessageBox.information(self, "Éxito", "Programación exportada con éxito.")
+            try:
+                with open(file_path, 'w', encoding='utf-8') as file:
+                    json.dump(schedule_data, file, indent=2)
+                QMessageBox.information(self, "Éxito", "Programación exportada con éxito.")
+                self.log_activity(f"Programación exportada a: {file_path}")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Error al exportar: {str(e)}")
+                self.log_activity(f"Error al exportar programación: {str(e)}")
 
     def import_schedule(self):
         """Importa la configuración de programación desde un archivo JSON."""
         file_path, _ = QFileDialog.getOpenFileName(self, "Importar programación", "", "JSON Files (*.json)")
         if file_path:
-            with open(file_path, 'r') as file:
-                schedule_data = json.load(file)
-            self.enableScheduleCheckBox.setChecked(schedule_data["enabled"])
-            self.scheduleCombo.setCurrentText(schedule_data["frequency"])
-            self.customSchedulePicker.setDateTime(QDateTime.fromString(schedule_data["custom_date"]))
-            self.advancedFrequencyCombo.setCurrentText(schedule_data["advanced_frequency"])
-            QMessageBox.information(self, "Éxito", "Programación importada con éxito.")
+            try:
+                with open(file_path, 'r', encoding='utf-8') as file:
+                    schedule_data = json.load(file)
+                
+                # Aplicar configuración importada
+                self.scheduleTypeCombo.setCurrentText(schedule_data.get("schedule_type", "Manual"))
+                
+                if "datetime" in schedule_data:
+                    self.dateTimePicker.setDateTime(QDateTime.fromString(schedule_data["datetime"]))
+                
+                # Restaurar checkboxes de días de la semana
+                weekdays = schedule_data.get("selected_weekdays", [])
+                for i, checked in enumerate(weekdays):
+                    if i < len(self.weekDaysCheckBoxes):
+                        self.weekDaysCheckBoxes[i].setChecked(checked)
+                
+                # Restaurar checkboxes de posiciones
+                positions = schedule_data.get("selected_positions", [])
+                for i, checked in enumerate(positions):
+                    if i < len(self.dayPositionCheckBoxes):
+                        self.dayPositionCheckBoxes[i].setChecked(checked)
+                
+                self.dayCombo.setCurrentText(schedule_data.get("day", "Ninguno"))
+                self.monthCombo.setCurrentText(schedule_data.get("month", "Ninguno"))
+                
+                QMessageBox.information(self, "Éxito", "Programación importada con éxito.")
+                self.log_activity(f"Programación importada desde: {file_path}")
+                
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Error al importar: {str(e)}")
+                self.log_activity(f"Error al importar programación: {str(e)}")
 
-    def log_schedule_history(self, message):
-        """Registra un mensaje en el historial de programaciones."""
-        self.scheduleHistoryList.addItem(message)
-
-    def show_schedule_notification(self):
-        """Muestra una notificación sobre la programación."""
-        self.notificationLabel.setText("Notificaciones: Backup programado para las 2:00 AM.")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = BackupApp()
     window.show()
+    sys.exit(app.exec())
