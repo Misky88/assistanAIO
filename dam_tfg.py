@@ -274,6 +274,26 @@ class SystemInfoApp(QMainWindow):
         layout.addWidget(password_label)
         layout.addWidget(self.password_input)
 
+        # Nombre de Equipo (solo lectura)
+        hostname_label = QLabel("Nombre de Equipo:")
+        hostname_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        self.hostname_input = QLineEdit()
+        self.hostname_input.setReadOnly(True)
+        self.hostname_input.setText(self.system_data.get('hostname', 'No disponible'))
+        self.hostname_input.setMinimumHeight(32)
+        layout.addWidget(hostname_label)
+        layout.addWidget(self.hostname_input)
+
+        # IP Local (solo lectura)
+        ip_label = QLabel("IP Local:")
+        ip_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        self.ip_input = QLineEdit()
+        self.ip_input.setReadOnly(True)
+        self.ip_input.setText(self.system_data.get('ip', 'No disponible'))
+        self.ip_input.setMinimumHeight(32)
+        layout.addWidget(ip_label)
+        layout.addWidget(self.ip_input)
+
         # Licencia
         license_label = QLabel("Licencia:")
         license_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
@@ -315,7 +335,7 @@ class SystemInfoApp(QMainWindow):
                 background-color: #2ecc71;
             }
         """)
-        self.btn_register.clicked.connect(self.register_user)  # Método que manejará el registro
+        self.btn_register.clicked.connect(self.register_user)
         button_layout.addWidget(self.btn_register)
 
         layout.addLayout(button_layout)
@@ -412,6 +432,20 @@ class SystemInfoApp(QMainWindow):
             value_label.setStyleSheet("color: #7f8c8d;")
             layout.addWidget(value_label)
         return widget
+
+    def create_section_title(self, text, emoji="🖥️"):
+        title_widget = QWidget()
+        layout = QHBoxLayout(title_widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+
+        icon_label = QLabel(emoji)
+        icon_label.setStyleSheet("font-size: 32px; margin-right: 12px;")
+        text_label = QLabel(text)
+        text_label.setStyleSheet("font-size: 28px; font-weight: bold; color: #2c3e50;")
+        layout.addWidget(icon_label)
+        layout.addWidget(text_label)
+        return title_widget
 
     def show_system_info(self):
     
