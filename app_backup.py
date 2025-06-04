@@ -81,19 +81,6 @@ class BackupApp(QWidget):
         name_layout.addWidget(QLabel("Tipo de Respaldo:"))
         name_layout.addWidget(self.backupTypeCombo)
 
-        # Carpeta de destino
-        destination_layout = QHBoxLayout()
-        self.destinationField = QLineEdit()
-        self.destinationField.setPlaceholderText("Seleccionar carpeta de destino...")
-        destination_layout.addWidget(self.destinationField)
-        
-        btn_select_destination = QPushButton("📁 Seleccionar")
-        btn_select_destination.clicked.connect(self.select_destination)
-        destination_layout.addWidget(btn_select_destination)
-        
-        name_layout.addWidget(QLabel("Carpeta de destino:"))
-        name_layout.addLayout(destination_layout)
-
         # Botón para restablecer valores
         btn_reset = QPushButton("🔄 Restablecer")
         btn_reset.clicked.connect(self.reset_name_tab)
@@ -365,12 +352,12 @@ class BackupApp(QWidget):
             }
         """)
 
-    def select_destination(self):
-        """Permite al usuario seleccionar la carpeta de destino."""
-        folder = QFileDialog.getExistingDirectory(self, "Seleccionar Carpeta de Destino")
-        if folder:
-            self.destination = folder
-            self.destinationField.setText(folder)
+    # def select_destination(self):
+    #     """Permite al usuario seleccionar la carpeta de destino."""
+    #     folder = QFileDialog.getExistingDirectory(self, "Seleccionar Carpeta de Destino")
+    #     if folder:
+    #         self.destination = folder
+    #         self.destinationField.setText(folder)
 
     def select_files(self):
         """Permite al usuario seleccionar archivos para la copia de seguridad."""
@@ -399,10 +386,10 @@ class BackupApp(QWidget):
             self.log_activity("Error: No se seleccionaron archivos para respaldar.")
             return
 
-        if not self.destination:
-            QMessageBox.warning(self, "Error", "Debe seleccionar una carpeta de destino.")
-            self.log_activity("Error: No se seleccionó carpeta de destino.")
-            return
+        # if not self.destination:
+        #     QMessageBox.warning(self, "Error", "Debe seleccionar una carpeta de destino.")
+        #     self.log_activity("Error: No se seleccionó carpeta de destino.")
+        #     return
 
         password = self.passwordField.text() if self.encryptCheckBox.isChecked() else None
         if password and len(password) < 12:
