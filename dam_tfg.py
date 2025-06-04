@@ -1,24 +1,20 @@
 import ctypes
-import sys
 import os
 import platform
 import sys
 import psutil
 import random
 import string
-
-from PyQt6.QtCore import QSize, Qt, QTimer, QUrl
+from PyQt6.QtCore import QSize, Qt, QTimer
 from datetime import datetime
 from PyQt6.QtWidgets import QScrollArea
-from PyQt6.QtGui import QIcon, QFont, QDesktopServices, QPixmap
+from PyQt6.QtGui import QIcon, QFont, QPixmap
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, QWidget,
                              QVBoxLayout, QHBoxLayout, QLabel, QFrame, QStackedWidget,
                              QLineEdit, QSpacerItem, QSizePolicy, QMessageBox,
                              QTableWidget, QTableWidgetItem, QAbstractItemView)
 from PyQt6.QtGui import QDesktopServices
 from PyQt6.QtCore import QUrl
-from io import BytesIO
-
 from app_backup import BackupApp
 from chocolatey import PackageApp
 from comandowin import ComandaWin
