@@ -411,8 +411,8 @@ class BackupApp(QWidget):
         """Restablece los valores de los campos en la pestaña 'Nombre de la Copia'."""
         self.outputNameField.clear()
         self.descriptionField.clear()
-        self.destinationField.clear()
-        self.destination = ""
+        # self.destinationField.clear()
+        # self.destination = ""
         self.backupTypeCombo.setCurrentIndex(0)
         self.update_preview()
 

@@ -16,7 +16,7 @@ class BackupThread(QThread):
             output_file = f"{self.output_name}.7z"
             result = compress_and_upload(
                 self.files,
-                output_file,
+                output_name=self.output_name,
                 progress_callback=self.progress.emit
             )
             self.finished.emit(True, result)

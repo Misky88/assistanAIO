@@ -102,9 +102,11 @@ def compress_and_upload(
             new_parts.append(encrypted_part)
         parts = new_parts
 
-    for part in parts:
+    for idx, part in enumerate(parts):
         upload_to_backblaze(part, immutable=immutable, immutability_duration=immutability_duration)
         os.remove(part)
+        if progress_callback:
+            progress_callback(int((idx + 1) / len(parts) * 100))
     return f"Backup completado exitosamente: {output_name} {'(' + str(len(parts)) + ' partes)' if len(parts)>1 else ''}"
 
 def encrypt_file_with_aes(input_file: str, output_file: str, key: bytes = None):
