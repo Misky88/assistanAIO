@@ -33,6 +33,7 @@ def get_pc_brand():
     except Exception as e:
         print(f"[WMI ERROR] {e}")
         uname = platform.uname()
+        print(f"[PLATFORM] system: {uname.system}, node: {uname.node}")
         return uname.system.lower(), uname.node.lower()
 
 class SystemInfoApp(QMainWindow):
@@ -60,7 +61,7 @@ class SystemInfoApp(QMainWindow):
         # Configurar temporizador para actualizar estadísticas en tiempo real
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_realtime_stats)
-        self.timer.start(400)  # Actualizar cada segundo
+        self.timer.start(400)  # Actualizar cada 0.4 segundos
 
     def update_realtime_stats(self):
         self.cpu_usage.setText(f"CPU: {psutil.cpu_percent()}%")
@@ -409,6 +410,8 @@ class SystemInfoApp(QMainWindow):
 
         # Marca para logo/avatar
         manufacturer, _ = get_pc_brand()
+        if manufacturer == "windows":
+            print("ATENCIÓN: No se pudo detectar el fabricante real, se usará 'windows'. Revisa la instalación y activación del entorno virtual.")
         self.system_data = {
             'os': f"{platform.system()} {platform.release()}",
             'hostname': platform.node(),
@@ -789,12 +792,13 @@ class SystemInfoApp(QMainWindow):
 
 if __name__ == "__main__":
     if not ctypes.windll.shell32.IsUserAnAdmin():
-        # Relaunch the script with admin rights
+        # Relaunch the script with admin rights y usando el Python del venv
         import sys
         import os
         params = " ".join([f'"{x}"' for x in sys.argv])
+        python_exe = sys.executable  # Esto apunta al Python del venv
         ctypes.windll.shell32.ShellExecuteW(
-            None, "runas", sys.executable, f'"{__file__}" {params}', None, 1
+            None, "runas", python_exe, f'"{__file__}" {params}', None, 1
         )
         sys.exit()
     else:
