@@ -1,5 +1,6 @@
 from PyQt6.QtCore import QThread, pyqtSignal
 from backup import compress_and_upload
+from PyQt6.QtWidgets import QMessageBox
 
 class BackupThread(QThread):
     progress = pyqtSignal(int)
@@ -12,11 +13,18 @@ class BackupThread(QThread):
 
     def run(self):
         try:
+            output_file = f"{self.output_name}.7z"
             result = compress_and_upload(
                 self.files,
-                self.output_name,
+                output_file,
                 progress_callback=self.progress.emit
             )
             self.finished.emit(True, result)
         except Exception as e:
             self.finished.emit(False, str(e))
+
+def on_backup_finished(self, success, result):
+    if success:
+        QMessageBox.information(self, "Éxito", f"Backup completado exitosamente: {result}")
+    else:
+        QMessageBox.critical(self, "Error", f"Error en el backup: {result}")
