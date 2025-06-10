@@ -3,6 +3,7 @@ import py7zr
 import sys
 import tempfile
 import shutil
+import subprocess
 from b2sdk.v1 import B2Api, InMemoryAccountInfo
 from config import B2_APP_KEY_ID, B2_APP_KEY, B2_BUCKET_NAME
 from typing import List
@@ -16,13 +17,14 @@ def compress_files(
     encrypt_filenames: bool = False,
     encryption_algorithm: str = "AES256"
 ) -> list:
+    print(f"Contraseña recibida en compresión: {password}")
     try:
         with py7zr.SevenZipFile(
             output_path,
             'w',
             password=password if password else None,
             filters=[{"id": py7zr.FILTER_LZMA2}],
-        #    encrypt_header=encrypt_filenames  # <-- AÑADE ESTO si quieres cifrar nombres
+            encrypt_header=encrypt_filenames
         ) as z:
             for file_path in files:
                 if os.path.isdir(file_path):
@@ -92,7 +94,7 @@ def compress_and_upload(
     output_path = os.path.join(cache_dir, output_name)
 
     # 3. Comprimir
-    parts = compress_files(
+    parts = compress_files_7zip(
         output_path, files, password,
         part_size=part_size,
         encrypt_filenames=encrypt_filenames,
@@ -152,3 +154,46 @@ def encrypt_file_with_aes(input_file: str, output_file: str, key: bytes = None):
 def descomprimir_archivo(ruta_7z, carpeta_destino, password):
     with py7zr.SevenZipFile(ruta_7z, 'r', password=password) as z:
         z.extractall(carpeta_destino)
+
+def compress_files_7zip(
+    output_path: str,
+    files: list,
+    password: str = None,
+    encrypt_filenames: bool = False,
+    part_size: int = None,
+    **kwargs  # <-- Esto permite ignorar argumentos extra
+) -> list:
+    # Construir el comando
+    cmd = [
+        "7z", "a", output_path  # 'a' para añadir/crear archivo
+    ]
+    if password:
+        cmd += [f"-p{password}"]  # Contraseña
+        if encrypt_filenames:
+            cmd += ["-mhe=on"]    # Cifrar nombres de archivos
+    # Soporte para dividir en partes
+    if part_size:
+        if part_size % (1024*1024) == 0:
+            size_str = f"{part_size // (1024*1024)}M"
+        elif part_size % 1024 == 0:
+            size_str = f"{part_size // 1024}K"
+        else:
+            size_str = str(part_size)
+        cmd += [f"-v{size_str}"]
+    # Añadir los archivos
+    cmd += files
+
+    print("Ejecutando:", " ".join(cmd))
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise Exception(f"Error en compresión: {result.stderr}")
+
+    # Si hay división en partes, devuelve la lista de partes generadas
+    if part_size:
+        base = os.path.splitext(output_path)[0]
+        parts = [f for f in os.listdir(os.path.dirname(output_path))
+                 if f.startswith(os.path.basename(base)) and f.endswith('.7z')]
+        parts = [os.path.join(os.path.dirname(output_path), p) for p in sorted(parts)]
+        return parts
+    else:
+        return [output_path]
