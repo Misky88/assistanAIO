@@ -699,14 +699,38 @@ class SystemInfoApp(QMainWindow):
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    app.setStyle("Fusion")
-    
-    font = QFont()
-    font.setFamily("Segoe UI")
-    font.setPointSize(10)
-    app.setFont(font)
-    
-    window = SystemInfoApp()
-    window.show()
-    app.exec()
+    if not ctypes.windll.shell32.IsUserAnAdmin():
+        # Relaunch the script with admin rights
+        import sys
+        import os
+        params = " ".join([f'"{x}"' for x in sys.argv])
+        ctypes.windll.shell32.ShellExecuteW(
+            None, "runas", sys.executable, f'"{__file__}" {params}', None, 1
+        )
+        sys.exit()
+        
+        # ---- CODIGO PARA OCULTAR LA CONSOLA CUANDO SE EJECUTA EL PROGRAMA COMO ADMINISTRADOR ----
+        # import subprocess
+        # import sys
+        # import os
+        # params = " ".join([f'"{x}"' for x in sys.argv])
+        # executable = sys.executable
+        # script = os.path.abspath(__file__)
+        # subprocess.run(
+        #     ['powershell', '-Command',
+        #      f'Start-Process "{executable}" -ArgumentList \'"{script}" {params}\' -Verb RunAs -WindowStyle Hidden'],
+        #     shell=True
+        # )
+        # sys.exit()
+    else:
+        app = QApplication(sys.argv)
+        app.setStyle("Fusion")
+        
+        font = QFont()
+        font.setFamily("Segoe UI")
+        font.setPointSize(10)
+        app.setFont(font)
+        
+        window = SystemInfoApp()
+        window.show()
+        app.exec()

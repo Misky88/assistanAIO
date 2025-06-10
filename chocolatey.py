@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QHBoxLayout,
     QLineEdit, QListWidget, QFileDialog, QWidget, QTabWidget, QListWidgetItem,
     QFrame, QSizePolicy, QSpacerItem, QComboBox, QDialog,
-    QVBoxLayout, QLabel, QPushButton, QTextEdit, QMessageBox,
+    QVBoxLayout, QLabel, QPushButton, QTextEdit, QMessageBox, QCheckBox
 )
 from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal
 from PyQt6.QtGui import QFont, QGuiApplication
@@ -24,7 +24,8 @@ class PackageApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Package App Manager")
-        self.setGeometry(100, 100, 700, 500)
+        self.setGeometry(100, 100, 1210, 800)
+        self.setMinimumSize(1210, 700)
         self.setStyleSheet(self.get_styles())
         self.app_dict = {}
         self.group_dict = {}
@@ -79,6 +80,11 @@ class PackageApp(QWidget):
             font-size: 13px;
             border: 1px solid #ccc;
             padding: 6px;
+        }
+        QTabBar::tab {
+            min-width: 100px;
+            min-height: 25px;
+            font-size: 15px;
         }
         """
 
@@ -202,86 +208,179 @@ class PackageApp(QWidget):
     def create_home_tab(self):
         tab = QWidget()
         layout = QVBoxLayout(tab)
-        layout.setContentsMargins(25, 25, 25, 25)
-        layout.setSpacing(10)
-        
+        layout.setContentsMargins(30, 30, 30, 30)
+        layout.setSpacing(15)
+
+        # Header principal con mejor proporción
         header_frame = QFrame()
+        header_frame.setFixedHeight(120)  # Altura fija para mejor control
         header_frame.setStyleSheet("""
             QFrame {
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #2980b9, stop:1 #3498db);
-                border-radius: 12px;
-                color: white;
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, 
+                        stop:0 #2c3e50, stop:0.3 #34495e, stop:0.7 #3498db, stop:1 #5dade2);
+                border-radius: 15px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
             }
         """)
-        header_layout = QVBoxLayout(header_frame)
-        header_layout.setContentsMargins(30, 25, 30, 25)
-        
-        title_row = QHBoxLayout()
-        
-        logo_label = QLabel("🚀")
-        logo_label.setFont(QFont("Segoe UI Emoji", 40))
-        logo_label.setStyleSheet("color: white; background: transparent;")
-        title_row.addWidget(logo_label)
-        
-        title_column = QVBoxLayout()
-        title = QLabel("Package App Manager")
-        title.setFont(QFont("Segoe UI", 26, QFont.Weight.Bold))
-        title.setStyleSheet("color: white; background: transparent;")
-        title_column.addWidget(title)
-        
-        subtitle = QLabel("Gestión simplificada de software para Windows")
-        subtitle.setFont(QFont("Segoe UI", 13))
-        subtitle.setStyleSheet("color: rgba(255, 255, 255, 0.85); background: transparent;")
-        title_column.addWidget(subtitle)
-        
-        title_row.addLayout(title_column)
-        title_row.addStretch()
 
-        selector_column = QVBoxLayout()
-        selector_label = QLabel("Gestor de Paquetes")
-        selector_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
-        selector_label.setStyleSheet("color: white; background: transparent;")
-        selector_column.addWidget(selector_label)
+        header_layout = QHBoxLayout(header_frame)
+        header_layout.setContentsMargins(40, 20, 40, 20)
+        header_layout.setSpacing(25)
+
+        # Sección izquierda - Logo y títulos
+        left_section = QHBoxLayout()
+        left_section.setSpacing(20)
+
+        # Logo con mejor styling
+        logo_label = QLabel("🚀")
+        logo_label.setFont(QFont("Segoe UI Emoji", 45))
+        logo_label.setStyleSheet("""
+            color: white; 
+            background: transparent;
+            padding: 5px;
+            border: 0;
+        """)
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        left_section.addWidget(logo_label)
+
+        # Columna de títulos
+        title_column = QVBoxLayout()
+        title_column.setSpacing(5)
+
+        title = QLabel("Package App Manager")
+        title.setFont(QFont("Segoe UI", 28, QFont.Weight.Bold))
+        title.setStyleSheet("""
+            color: white; 
+            background: transparent;
+            letter-spacing: 1px;
+            border: 0;
+        """)
+        title_column.addWidget(title)
+
+        subtitle = QLabel("Gestión simplificada de software para Windows")
+        subtitle.setFont(QFont("Segoe UI", 14))
+        subtitle.setStyleSheet("""
+            color: rgba(255, 255, 255, 0.9); 
+            background: transparent;
+            font-weight: 300;
+            border: 0;
+        """)
+        title_column.addWidget(subtitle)
+
+        left_section.addLayout(title_column)
+        header_layout.addLayout(left_section)
+
+        # Espaciador flexible
+        header_layout.addStretch(1)
+
+        # Sección derecha - Selector de gestor de paquetes
+        right_section = QVBoxLayout()
+        right_section.setSpacing(8)
+        right_section.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        selector_label = QLabel("GESTOR DE PAQUETES")
+        selector_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        selector_label.setStyleSheet("""
+            color: rgba(255, 255, 255, 0.8); 
+            background: transparent;
+            letter-spacing: 1px;
+            border: 0;
+        """)
+        selector_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        right_section.addWidget(selector_label)
 
         self.package_selector = QComboBox()
         self.package_selector.addItems(["WinGet", "Chocolatey"])
         self.package_selector.setCurrentIndex(0)
+        self.package_selector.setFixedSize(180, 40)
         self.package_selector.setStyleSheet("""
             QComboBox {
-                background-color: white;
+                background-color: rgba(255, 255, 255, 0.95);
                 color: #2c3e50;
-                padding: 6px 10px;
-                border-radius: 6px;
-                font-size: 13px;
-                min-width: 150px;
+                padding: 8px 15px;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: 500;
+                border: 2px solid rgba(255, 255, 255, 0.3);
+            }
+            QComboBox:hover {
+                background-color: white;
+                border: 2px solid rgba(255, 255, 255, 0.6);
+                border-radius: 8px;
+            }
+            QComboBox:focus {
+                border: 2px solid #fff;
+                outline: none;
+                border-radius: 8px;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 30px;          
+                border-radius: 8px;          
             }
             QComboBox QAbstractItemView {
                 background-color: white;
                 color: #2c3e50;
-                selection-background-color: #d0e7f9;
-                selection-color: #000000;
-                border: 0;
+                selection-background-color: #e8f4fd;
+                selection-color: #2c3e50;
+                border: 1px solid #bdc3c7;
+                border-radius: 8px;
+                padding: 5px;
+                font-size: 14px;
+                outline: none;
+            }
+            QComboBox QAbstractItemView::item {
+                padding: 8px 15px;
+                border-radius: 4px;
+                margin: 2px;
+                border: none;
+                outline: none;
+            }
+            QComboBox QAbstractItemView::item:hover {
+                background-color: #e8f4fd;
+                border: none;
+                outline: none;
+                border-radius: 8px;
+            }
+            QComboBox QAbstractItemView::item:selected {
+                background-color: #e8f4fd;
+                border: none;
+                outline: none;
+                border-radius: 8px;
             }
         """)
         self.package_selector.currentIndexChanged.connect(self.on_package_manager_changed)
-        selector_column.addWidget(self.package_selector)
+        right_section.addWidget(self.package_selector)
 
-        title_row.addLayout(selector_column)
+        header_layout.addLayout(right_section)
 
-        header_layout.addLayout(title_row)
-        
         layout.addWidget(header_frame)
         
-        cards_container = QFrame()
-        cards_container.setStyleSheet("""
+        cards_main_container = QFrame()
+        cards_main_container.setStyleSheet("""
             QFrame {
                 background-color: transparent;
+                border: 0;
             }
         """)
-        cards_layout = QHBoxLayout(cards_container)
-        cards_layout.setSpacing(20)
-        
+        cards_main_layout = QVBoxLayout(cards_main_container)
+        cards_main_layout.setSpacing(20)
+
+        # Primera fila - Sistema y Chocolatey
+        top_row_container = QFrame()
+        top_row_container.setStyleSheet("""
+            QFrame {
+                background-color: transparent;
+                border: 0;
+            }
+        """)
+        top_row_layout = QHBoxLayout(top_row_container)
+        top_row_layout.setSpacing(20)
+
+        # Sistema Card
         system_card = QFrame()
+        system_card.setFixedHeight(190)
+        system_card.setFixedWidth(400)
         system_card.setStyleSheet("""
             QFrame {
                 background-color: white;
@@ -290,88 +389,43 @@ class PackageApp(QWidget):
             }
         """)
         system_layout = QVBoxLayout(system_card)
-        system_layout.setContentsMargins(20, 20, 20, 20)
-        
+        system_layout.setContentsMargins(15, 15, 15, 15)
+        system_layout.setSpacing(8)
+
         system_header = QHBoxLayout()
+        system_header.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         system_icon = QLabel("🖥️")
-        system_icon.setFont(QFont("Segoe UI Emoji", 18))
-        system_header.addWidget(system_icon)
-        
+        system_icon.setFont(QFont("Segoe UI Emoji", 16))
         system_title = QLabel("Sistema")
-        system_title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        system_title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
         system_title.setStyleSheet("color: #2c3e50;")
+        system_header.addWidget(system_icon)
         system_header.addWidget(system_title)
-        system_header.addStretch()
         system_layout.addLayout(system_header)
         
         sys_separator = QFrame()
         sys_separator.setFrameShape(QFrame.Shape.HLine)
         sys_separator.setStyleSheet("background-color: #ecf0f1; max-height: 1px;")
         system_layout.addWidget(sys_separator)
-        
+
         windows_status = QLabel("Windows 10/11")
-        windows_status.setFont(QFont("Segoe UI", 12))
-        windows_status.setStyleSheet("color: #34495e; padding: 10px 0;")
+        windows_status.setFont(QFont("Segoe UI", 11))
+        windows_status.setStyleSheet("color: #34495e; padding: 5px 0;")
         windows_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
         system_layout.addWidget(windows_status)
-        
+
         self.status_indicator = QLabel("✓ Operativo")
-        self.status_indicator.setFont(QFont("Segoe UI", 11))
-        self.status_indicator.setStyleSheet("color: #2ecc71; font-weight: bold; border-radius: 10px; background-color: rgba(46, 204, 113, 0.1); padding: 5px;")
+        self.status_indicator.setFont(QFont("Segoe UI", 10))
+        self.status_indicator.setStyleSheet("color: #2ecc71; font-weight: bold; border-radius: 8px; background-color: rgba(46, 204, 113, 0.1); padding: 4px 8px;")
         self.status_indicator.setAlignment(Qt.AlignmentFlag.AlignCenter)
         system_layout.addWidget(self.status_indicator)
-        
-        cards_layout.addWidget(system_card)
-        
-        winget_card = QFrame()
-        winget_card.setStyleSheet("""
-            QFrame {
-                background-color: white;
-                border-radius: 12px;
-                border: none;
-            }
-        """)
-        winget_layout = QVBoxLayout(winget_card)
-        winget_layout.setContentsMargins(20, 20, 20, 20)
-        
-        winget_header = QHBoxLayout()
-        winget_icon = QLabel("📦")
-        winget_icon.setFont(QFont("Segoe UI Emoji", 18))
-        winget_header.addWidget(winget_icon)
-        
-        winget_title = QLabel("WinGet")
-        winget_title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
-        winget_title.setStyleSheet("color: #2c3e50;")
-        winget_header.addWidget(winget_title)
-        winget_header.addStretch()
-        winget_layout.addLayout(winget_header)
-        
-        win_separator = QFrame()
-        win_separator.setFrameShape(QFrame.Shape.HLine)
-        win_separator.setStyleSheet("background-color: #ecf0f1; max-height: 1px;")
-        winget_layout.addWidget(win_separator)
-        
-        winget_status = QLabel("Gestor de paquetes")
-        winget_status.setFont(QFont("Segoe UI", 12))
-        winget_status.setStyleSheet("color: #34495e; padding: 10px 0;")
-        winget_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        winget_layout.addWidget(winget_status)
-        
-        if self.is_winget_installed():
-            winget_indicator = QLabel("✓ Detectado")
-            winget_indicator.setFont(QFont("Segoe UI", 11))
-            winget_indicator.setStyleSheet("color: #2ecc71; font-weight: bold; border-radius: 10px; background-color: rgba(46, 204, 113, 0.1); padding: 5px;")
-        else:
-            winget_indicator = QLabel("✕ No detectado")
-            winget_indicator.setFont(QFont("Segoe UI", 11))
-            winget_indicator.setStyleSheet("color: #e74c3c; font-weight: bold; border-radius: 10px; background-color: rgba(231, 76, 60, 0.1); padding: 5px;")
 
-        winget_indicator.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        winget_layout.addWidget(winget_indicator)
-        
-        cards_layout.addWidget(winget_card)
-        
+        top_row_layout.addWidget(system_card)
+
+        # Chocolatey Card
         choco_card = QFrame()
+        choco_card.setFixedHeight(190)
+        choco_card.setFixedWidth(400)
         choco_card.setStyleSheet("""
             QFrame {
                 background-color: white;
@@ -380,99 +434,122 @@ class PackageApp(QWidget):
             }
         """)
         choco_layout = QVBoxLayout(choco_card)
-        choco_layout.setContentsMargins(20, 20, 20, 20)
-        
+        choco_layout.setContentsMargins(15, 15, 15, 15)
+        choco_layout.setSpacing(8)
+
         choco_header = QHBoxLayout()
+        choco_header.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         choco_icon = QLabel("🍫")
-        choco_icon.setFont(QFont("Segoe UI Emoji", 18))
-        choco_header.addWidget(choco_icon)
-        
+        choco_icon.setFont(QFont("Segoe UI Emoji", 16))
         choco_title = QLabel("Chocolatey")
-        choco_title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        choco_title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
         choco_title.setStyleSheet("color: #2c3e50;")
+        choco_header.addWidget(choco_icon)
         choco_header.addWidget(choco_title)
-        choco_header.addStretch()
         choco_layout.addLayout(choco_header)
-        
+
         choco_separator = QFrame()
         choco_separator.setFrameShape(QFrame.Shape.HLine)
         choco_separator.setStyleSheet("background-color: #ecf0f1; max-height: 1px;")
         choco_layout.addWidget(choco_separator)
-        
+
         choco_status = QLabel("Gestor de paquetes")
-        choco_status.setFont(QFont("Segoe UI", 12))
-        choco_status.setStyleSheet("color: #34495e; padding: 10px 0;")
+        choco_status.setFont(QFont("Segoe UI", 11))
+        choco_status.setStyleSheet("color: #34495e; padding: 5px 0;")
         choco_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
         choco_layout.addWidget(choco_status)
-        
+
         if self.is_chocolatey_installed():
             choco_indicator = QLabel("✓ Detectado")
-            choco_indicator.setFont(QFont("Segoe UI", 11))
+            choco_indicator.setFont(QFont("Segoe UI", 10))
             choco_indicator.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            choco_indicator.setStyleSheet("color: #2ecc71; font-weight: bold; border-radius: 10px; background-color: rgba(46, 204, 113, 0.1); padding: 5px;")
+            choco_indicator.setStyleSheet("color: #2ecc71; font-weight: bold; border-radius: 8px; background-color: rgba(46, 204, 113, 0.1); padding: 4px 8px;")
         else:
             choco_indicator = QLabel("✕ No detectado")
-            choco_indicator.setFont(QFont("Segoe UI", 11))
+            choco_indicator.setFont(QFont("Segoe UI", 10))
             choco_indicator.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            choco_indicator.setStyleSheet("color: #e74c3c; font-weight: bold; border-radius: 10px; background-color: rgba(231, 76, 60, 0.1); padding: 5px;")
-        
+            choco_indicator.setStyleSheet("color: #e74c3c; font-weight: bold; border-radius: 8px; background-color: rgba(231, 76, 60, 0.1); padding: 4px 8px;")
+
         choco_layout.addWidget(choco_indicator)
-        cards_layout.addWidget(choco_card)
-        
-        layout.addWidget(cards_container)
-        
-        button_layout = QHBoxLayout()
-        button_layout.setContentsMargins(0, 0, 0, 0)
-        button_layout.setSpacing(30)
-        button_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        top_row_layout.addWidget(choco_card)
 
-        search_btn = QPushButton("🔍 Explorar Aplicaciones")
-        search_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #3498db;
-                color: white;
-                padding: 12px 16px;
-                font-size: 13px;
-                font-weight: bold;
-                border-radius: 6px;
-                min-width: 150px;
-            }
-            QPushButton:hover {
-                background-color: #2980b9;
+        # Agregar la primera fila al layout principal
+        cards_main_layout.addWidget(top_row_container)
+
+        # Segunda fila - WinGet centrado
+        bottom_row_container = QFrame()
+        bottom_row_container.setStyleSheet("""
+            QFrame {
+                background-color: transparent;
+                border: 0;
             }
         """)
-        search_btn.clicked.connect(lambda: self.tabs.setCurrentIndex(1))
-        button_layout.addWidget(search_btn)
+        bottom_row_layout = QHBoxLayout(bottom_row_container)
+        bottom_row_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        update_all_btn = QPushButton("⬆️ Actualizar Todo")
-        update_all_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2ecc71;
-                color: white;
-                padding: 12px 16px;
-                font-size: 13px;
-                font-weight: bold;
-                border-radius: 6px;
-                min-width: 150px;
-            }
-            QPushButton:hover {
-                background-color: #27ae60;
+        # WinGet Card
+        winget_card = QFrame()
+        winget_card.setFixedHeight(190)
+        winget_card.setFixedWidth(400)  # Ancho fijo para que se vea proporcional
+        winget_card.setStyleSheet("""
+            QFrame {
+                background-color: white;
+                border-radius: 12px;
+                border: none;
             }
         """)
-        update_all_btn.clicked.connect(self.update_all_apps)
-        button_layout.addWidget(update_all_btn)
+        winget_layout = QVBoxLayout(winget_card)
+        winget_layout.setContentsMargins(15, 15, 15, 15)
+        winget_layout.setSpacing(8)
 
-        layout.addLayout(button_layout)
+        winget_header = QHBoxLayout()
+        winget_header.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        winget_icon = QLabel("📦")
+        winget_icon.setFont(QFont("Segoe UI Emoji", 16))
+        winget_title = QLabel("WinGet")
+        winget_title.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        winget_title.setStyleSheet("color: #2c3e50;")
+        winget_header.addWidget(winget_icon)
+        winget_header.addWidget(winget_title)
+        winget_layout.addLayout(winget_header)
+
+        win_separator = QFrame()
+        win_separator.setFrameShape(QFrame.Shape.HLine)
+        win_separator.setStyleSheet("background-color: #ecf0f1; max-height: 1px;")
+        winget_layout.addWidget(win_separator)
+
+        winget_status = QLabel("Gestor de paquetes")
+        winget_status.setFont(QFont("Segoe UI", 11))
+        winget_status.setStyleSheet("color: #34495e; padding: 5px 0;")
+        winget_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        winget_layout.addWidget(winget_status)
+
+        if self.is_winget_installed():
+            winget_indicator = QLabel("✓ Detectado")
+            winget_indicator.setFont(QFont("Segoe UI", 10))
+            winget_indicator.setStyleSheet("color: #2ecc71; font-weight: bold; border-radius: 8px; background-color: rgba(46, 204, 113, 0.1); padding: 4px 8px;")
+        else:
+            winget_indicator = QLabel("✕ No detectado")
+            winget_indicator.setFont(QFont("Segoe UI", 10))
+            winget_indicator.setStyleSheet("color: #e74c3c; font-weight: bold; border-radius: 8px; background-color: rgba(231, 76, 60, 0.1); padding: 4px 8px;")
+
+        winget_indicator.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        winget_layout.addWidget(winget_indicator)
+
+        bottom_row_layout.addWidget(winget_card)
+
+        cards_main_layout.addWidget(bottom_row_container)
+
+        layout.addWidget(cards_main_container)
 
         if hasattr(self, "choco_indicator"):
             if self.is_chocolatey_installed():
                 self.choco_indicator.setText("✓ Detectado")
-                self.choco_indicator.setStyleSheet("color: #2ecc71; font-weight: bold; border-radius: 10px; background-color: rgba(46, 204, 113, 0.1); padding: 5px;")
+                self.choco_indicator.setStyleSheet("color: #2ecc71; font-weight: bold; border-radius: 8px; background-color: rgba(46, 204, 113, 0.1); padding: 4px 8px;")
             else:
                 self.choco_indicator.setText("✕ No detectado")
-                self.choco_indicator.setStyleSheet("color: #e74c3c; font-weight: bold; border-radius: 10px; background-color: rgba(231, 76, 60, 0.1); padding: 5px;")
+                self.choco_indicator.setStyleSheet("color: #e74c3c; font-weight: bold; border-radius: 8px; background-color: rgba(231, 76, 60, 0.1); padding: 4px 8px;")
 
-        
         return tab
 
 
@@ -522,8 +599,19 @@ class PackageApp(QWidget):
     def create_manage_tab(self):
         tab = QWidget()
         layout = QVBoxLayout(tab)
+        self.updates_only_checkbox = QCheckBox("Mostrar solo programas con actualización")
+        self.updates_only_checkbox.stateChanged.connect(self.toggle_updates_view)
+        top_row_layout = QHBoxLayout()
+        self.manage_title_label = self.create_title_label("Aplicaciones Instaladas")
+        top_row_layout.addWidget(self.manage_title_label)
 
-        layout.addWidget(self.create_title_label("Aplicaciones Instaladas"))
+        top_row_layout.addStretch()  # empuja el checkbox a la derecha
+
+        self.updates_only_checkbox = QCheckBox("Mostrar solo programas con actualización")
+        self.updates_only_checkbox.stateChanged.connect(self.toggle_updates_view)
+        top_row_layout.addWidget(self.updates_only_checkbox)
+
+        layout.addLayout(top_row_layout)
         self.filter_input = QLineEdit()
         self.filter_input.setPlaceholderText("Buscar aplicación instalada...")
         self.filter_input.textChanged.connect(self.filter_installed_apps)
@@ -533,8 +621,11 @@ class PackageApp(QWidget):
         layout.addWidget(self.installed_apps)
 
         buttons_layout = QHBoxLayout()
-        buttons_layout.addWidget(self.create_button("Actualizar", self.update_selected_apps))
-        buttons_layout.addWidget(self.create_button("Desinstalar", self.uninstall_selected_apps))
+        self.update_button = self.create_button("Actualizar", self.update_selected_apps)
+        self.uninstall_button = self.create_button("Desinstalar", self.uninstall_selected_apps)
+        buttons_layout.addWidget(self.update_button)
+        buttons_layout.addWidget(self.uninstall_button)
+        self.update_button.setVisible(False)
         self.add_spacer(buttons_layout)
         layout.addLayout(buttons_layout)
 
@@ -552,6 +643,111 @@ class PackageApp(QWidget):
         layout.addWidget(self.log_text)
 
         return tab
+    
+    # ******************* FUNCIONES PARA MOSTRAR BOTONES Y MOSTRAR LISTA DE ACTUALIZABLES ***********************
+    def toggle_updates_view(self, state):
+        if state == Qt.CheckState.Checked.value:
+            self.manage_title_label.setText("Aplicaciones con actualización")
+            self.update_button.setVisible(True)
+            self.uninstall_button.setVisible(False)
+            if self.package_manager == "winget":
+                self.load_upgradable_apps()
+            elif self.package_manager == "choco":
+                self.load_upgradable_apps_choco()
+            else:
+                self.log_text.append("Este gestor no soporta la vista de actualizaciones.")
+                self.updates_only_checkbox.setCheckState(Qt.CheckState.Unchecked)
+        else:
+            self.manage_title_label.setText("Aplicaciones Instaladas")
+            self.update_button.setVisible(False)
+            self.uninstall_button.setVisible(True)
+            self.load_installed_apps()
+
+    def load_upgradable_apps(self):
+        self.installed_apps.clear()
+        self.all_installed = []
+        self.installed_apps_dict = {}
+
+        try:
+            result = subprocess.run(
+                ["winget", "upgrade", "--source", "winget"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace"
+            )
+            output = result.stdout
+            lines = output.splitlines()
+            data_started = False
+            pattern = re.compile(r'^(.+?)\s{2,}(.+?)\s{2,}', re.UNICODE)
+
+            for line in lines:
+                if not data_started:
+                    if re.match(r'^[-\s]+$', line) and line.strip():
+                        data_started = True
+                    continue
+
+                if not line.strip():
+                    continue
+
+                match = pattern.match(line)
+                if match:
+                    app_name = match.group(1).strip()
+                    app_id = match.group(2).strip()
+                    if app_name.lower() == "nombre" or app_id.lower() == "id":
+                        continue
+                    self.all_installed.append(app_name)
+                    self.installed_apps.addItem(app_name)
+                    self.installed_apps_dict[app_name] = app_id
+
+
+            if not self.all_installed:
+                mensaje = QListWidgetItem("No hay paquetes actualizables con WinGet.")
+                mensaje.setFlags(Qt.ItemFlag.NoItemFlags)
+                self.installed_apps.addItem(mensaje)
+        except Exception as e:
+            self.log_text.append(f"Error al cargar aplicaciones con actualización: {e}")
+
+    def load_upgradable_apps_choco(self):
+        self.installed_apps.clear()
+        self.all_installed = []
+        self.installed_apps_dict = {}
+
+        try:
+            result = subprocess.run(
+                ["choco", "outdated"],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                shell=True
+            )
+            output = result.stdout
+            lines = output.splitlines()
+            encontrados = 0
+
+            for line in lines:
+                if not line.strip() or line.startswith("Outdated Packages") or line.startswith(" Output") or "|" not in line:
+                    continue
+
+                parts = line.split("|")
+                if len(parts) >= 3:
+                    app_name = parts[0].strip()
+                    current_version = parts[1].strip()
+                    new_version = parts[2].strip()
+
+                    self.all_installed.append(app_name)
+                    self.installed_apps.addItem(app_name)
+                    self.installed_apps_dict[app_name] = app_name
+                    encontrados += 1
+
+            if encontrados == 0:
+                mensaje = QListWidgetItem("No hay paquetes actualizables con Chocolatey.")
+                mensaje.setFlags(Qt.ItemFlag.NoItemFlags)
+                self.installed_apps.addItem(mensaje)
+
+        except Exception as e:
+            self.log_text.append(f"Error al listar paquetes actualizables en Chocolatey: {e}")
     
     #********************* CARGAR LSISTA DE PAQUETES *******************
     def load_installed_apps(self):
@@ -802,7 +998,7 @@ class PackageApp(QWidget):
 
         thread = InstallSingleThread(app_name, app_id, self.package_manager)
         thread.finalizado.connect(self.load_installed_apps)
-        dialog = ProgressDialog("Instalando aplicación", thread, self, mensaje_final=f"'{app_name}' se ha instalado correctamente.")
+        dialog = ProgressDialog("Instalando aplicación", thread, self, mensaje_header="¡Instalacion completada!", mensaje_final=f"'{app_name}' se ha instalado correctamente.")
         dialog.exec()
 
 
@@ -865,7 +1061,7 @@ class PackageApp(QWidget):
 
         thread = UpdateAllThread(self.package_manager)
         thread.finalizado.connect(self.load_installed_apps)
-        dialog = ProgressDialog("Actualizando todos los paquetes...", thread, self, mensaje_final=f"Paquetes actualizados correctamente.", permitir_cancelar=True)
+        dialog = ProgressDialog("Actualizando todos los paquetes...", thread, self, mensaje_header="¡Actualizacion completada!", mensaje_final=f"Paquetes actualizados correctamente.", permitir_cancelar=True)
         dialog.exec()
 
 
@@ -989,6 +1185,7 @@ class PackageApp(QWidget):
             thread=thread,
             parent=self,
             total=len(self.group_dict),
+            mensaje_header="¡Instalación completada!",
             mensaje_final="La instalación de los paquetes ha finalizado.",
             permitir_cancelar=True
         )
@@ -1048,8 +1245,9 @@ class PackageApp(QWidget):
 
             thread = UpdateSingleThread(app_name, app_id, self.package_manager)
             thread.finalizado.connect(self.load_installed_apps)
-            dialog = ProgressDialog("Actualizando aplicación", thread, self)
+            dialog = ProgressDialog("Actualizando aplicación", thread, self, mensaje_header='¡Actualización completada!', mensaje_final=f"'{app_name}' se ha actualizado correctamente.")
             dialog.exec()
+            self.updates_only_checkbox.setChecked(False)
             self.filter_input.clear()
 
 
@@ -1118,7 +1316,7 @@ class PackageApp(QWidget):
 
             thread = UninstallSingleThread(app_name, app_id, self.package_manager)
             thread.finalizado.connect(self.load_installed_apps)
-            dialog = ProgressDialog("Desinstalando aplicación", thread, self, mensaje_final=f"'{app_name}' se ha desinstalado correctamente.")
+            dialog = ProgressDialog("Desinstalando aplicación", thread, self, mensaje_header='¡Desinstalación completada!', mensaje_final=f"'{app_name}' se ha desinstalado correctamente.")
             dialog.exec()
             self.filter_input.clear()
 
@@ -1292,6 +1490,7 @@ class PackageApp(QWidget):
         self.group_dict.clear()
         self.search_results.clear()
         self.log_text.append("Agrupaciones limpiadas al cambiar el gestor de paquetes.")
+        self.updates_only_checkbox.setChecked(False)
         self.load_installed_apps()
 
 
@@ -1393,13 +1592,14 @@ class PackageApp(QWidget):
 
 
 class ProgressDialog(QDialog):
-    def __init__(self, titulo, thread, parent=None, total=None, mensaje_final="La acción se ha completado correctamente.", permitir_cancelar=False):
+    def __init__(self, titulo, thread, parent=None, total=None, mensaje_header="Accion completada", mensaje_final="La acción se ha completado correctamente.", permitir_cancelar=False):
         super().__init__(parent)
         self.setWindowTitle("Procesando...")
         self.setFixedSize(480, 220)
         self.setModal(True)
         self.thread = thread
         self.mensaje_final = mensaje_final
+        self.mensaje_header = mensaje_header
         self.total = total
         self.pasos = 0
 
@@ -1472,7 +1672,7 @@ class ProgressDialog(QDialog):
             self.cancel_button.clicked.connect(self.cancelar_instalacion)
             layout.addWidget(self.cancel_button)
 
-        self.thread.progreso.connect(self.actualizar_mensaje) # type: ignore
+        self.thread.progreso.connect(self.actualizar_mensaje)
         self.thread.finalizado.connect(self.finalizar_y_notificar)
         self.thread.cancelado.connect(self.actualizar_mensaje)
 
@@ -1494,14 +1694,14 @@ class ProgressDialog(QDialog):
 
     def finalizar_y_notificar(self):
         self.accept()
-        SuccessDialog(self.mensaje_final, parent=self.parent()).exec()
+        SuccessDialog(self.mensaje_header, self.mensaje_final, parent=self.parent()).exec()
 
 
 class SuccessDialog(QDialog):
-    def __init__(self, mensaje, parent=None):
+    def __init__(self, mensaje_header, mensaje, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("✅ Éxito")
-        self.setFixedSize(420, 160)
+        self.setWindowTitle("Éxito")
+        self.setFixedSize(480, 220)
         self.setModal(True)
 
         self.setStyleSheet("""
@@ -1509,49 +1709,55 @@ class SuccessDialog(QDialog):
                 background-color: #ffffff;
                 border-radius: 12px;
             }
-            QLabel#titulo {
+            QLabel#titleLabel {
                 font-size: 18px;
                 font-weight: bold;
-                color: #2ecc71;
-                padding-top: 20px;
+                color: white;
+                background-color: #2ecc71;
+                padding: 15px;
+                border-top-left-radius: 10px;
+                border-top-right-radius: 10px;
             }
-            QLabel#mensaje {
+            QLabel#mensajeLabel {
                 font-size: 14px;
-                padding: 10px 30px;
+                padding: 25px 30px;
                 color: #2c3e50;
+                background-color: #f2f6f8;
+                border-bottom-left-radius: 10px;
+                border-bottom-right-radius: 10px;
             }
             QPushButton {
-                padding: 8px 20px;
-                margin-top: 10px;
-                border-radius: 6px;
-                background-color: #2980b9;
+                padding: 10px 24px;
+                margin-top: 16px;
+                border-radius: 8px;
+                background-color: #2ecc71;
                 color: white;
                 font-weight: bold;
+                font-size: 14px;
             }
             QPushButton:hover {
-                background-color: #1c6ea4;
+                background-color: #27ae60;
             }
         """)
 
         layout = QVBoxLayout(self)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        titulo = QLabel("✅ Acción completada")
-        titulo.setObjectName("titulo")
-        titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(titulo)
+        title = QLabel(mensaje_header)
+        title.setObjectName("titleLabel")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(title)
 
-        label = QLabel(mensaje)
-        label.setObjectName("mensaje")
-        label.setWordWrap(True)
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(label)
+        body = QLabel(mensaje)
+        body.setObjectName("mensajeLabel")
+        body.setWordWrap(True)
+        body.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(body)
 
         ok_button = QPushButton("Cerrar")
         ok_button.clicked.connect(self.accept)
         ok_button.setCursor(Qt.CursorShape.PointingHandCursor)
         layout.addWidget(ok_button, alignment=Qt.AlignmentFlag.AlignCenter)
-
-        self.setLayout(layout)
 
 
 class InstallGroupThread(QThread):
@@ -1766,8 +1972,25 @@ if __name__ == "__main__":
             None, "runas", sys.executable, f'"{__file__}" {params}', None, 1
         )
         sys.exit()
+        
+
+        # import subprocess
+        # import sys
+        # import os
+        # params = " ".join([f'"{x}"' for x in sys.argv])
+        # executable = sys.executable
+        # script = os.path.abspath(__file__)
+        # subprocess.run(
+        #     ['powershell', '-Command',
+        #      f'Start-Process "{executable}" -ArgumentList \'"{script}" {params}\' -Verb RunAs -WindowStyle Hidden'],
+        #     shell=True
+        # )
+        # sys.exit()
     else:
         app = QApplication([])
         window = PackageApp()
         window.show()
         app.exec()
+
+
+# choco install slack --version=4.43.49
