@@ -10,7 +10,8 @@ from PyQt6.QtCore import Qt, QDateTime, QTime
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog, QLabel,
     QCheckBox, QComboBox, QLineEdit, QMessageBox, QListWidget,
-    QProgressBar, QTabWidget, QHBoxLayout, QDateTimeEdit, QSizePolicy
+    QProgressBar, QTabWidget, QHBoxLayout, QDateTimeEdit, QSizePolicy,
+    QDialog
 )
 from PyQt6.QtGui import QIcon
 from backup_thread import BackupThread
@@ -22,6 +23,20 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
+
+class WaitDialog(QDialog):
+    def __init__(self, mensaje="Realizando copia de seguridad...", parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Por favor, espera")
+        self.setModal(True)
+        self.setWindowFlags(self.windowFlags() & ~Qt.WindowType.WindowContextHelpButtonHint)
+        layout = QVBoxLayout(self)
+        self.label = QLabel(mensaje)
+        layout.addWidget(self.label)
+        self.progress = QProgressBar()
+        self.progress.setRange(0, 0)  # Barra indeterminada
+        layout.addWidget(self.progress)
+
 
 class BackupApp(QWidget):
     def __init__(self):
@@ -548,6 +563,17 @@ class BackupApp(QWidget):
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Error al importar: {str(e)}")
                 self.log_activity(f"Error al importar programación: {str(e)}")
+
+    def realizar_backup(self):
+        wait_dialog = WaitDialog("Realizando copia de seguridad...", self)
+        wait_dialog.show()
+        QApplication.processEvents()  # Para que se muestre el diálogo
+
+        try:
+            # Aquí va tu lógica de backup y subida (puede ser una función larga)
+            self.hacer_backup_y_subir()
+        finally:
+            wait_dialog.close()
 
 
 if __name__ == "__main__":
