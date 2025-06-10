@@ -79,12 +79,19 @@ def compress_and_upload(
     immutable=False,
     immutability_duration=None,
     encryption_algorithm="AES256",
-    encrypt_with_aes=False,  # <--- NUEVO
+    encrypt_with_aes=False,
     progress_callback=None
 ):
+    # 1. Crear carpeta cache si no existe
+    cache_dir = os.path.join(os.path.dirname(__file__), "cache")
+    os.makedirs(cache_dir, exist_ok=True)
+
+    # 2. Guardar el backup en cache
     if not output_name.endswith(".7z"):
         output_name += ".7z"
-    output_path = output_name
+    output_path = os.path.join(cache_dir, output_name)
+
+    # 3. Comprimir
     parts = compress_files(
         output_path, files, password,
         part_size=part_size,
@@ -92,21 +99,25 @@ def compress_and_upload(
         encryption_algorithm=encryption_algorithm
     )
 
-    # Nuevo: Cifrar con AES si se pide
+    # 4. Cifrar si se pide
     if encrypt_with_aes:
-        new_parts = []
+        encrypted_parts = []
         for part in parts:
-            encrypted_part = part + '.enc'
-            encrypt_file_with_aes(part, encrypted_part)  # Guardará la clave en .enc.key
+            encrypted_file = part + ".aes"
+            encrypt_file_with_aes(part, encrypted_file)
+            encrypted_parts.append(encrypted_file)
             os.remove(part)
-            new_parts.append(encrypted_part)
-        parts = new_parts
+        parts = encrypted_parts
 
+    # 5. Subir a B2 y borrar de cache
     for idx, part in enumerate(parts):
+        print(f"Subiendo {part} a B2...")
         upload_to_backblaze(part, immutable=immutable, immutability_duration=immutability_duration)
-        os.remove(part)
+        print(f"{part} subido correctamente.")
         if progress_callback:
             progress_callback(int((idx + 1) / len(parts) * 100))
+        os.remove(part)  # Borra el archivo de cache
+
     return f"Backup completado exitosamente: {output_name} {'(' + str(len(parts)) + ' partes)' if len(parts)>1 else ''}"
 
 def encrypt_file_with_aes(input_file: str, output_file: str, key: bytes = None):
