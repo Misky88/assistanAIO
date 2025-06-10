@@ -6,16 +6,18 @@ class BackupThread(QThread):
     progress = pyqtSignal(int)
     finished = pyqtSignal(bool, str)
 
-    def __init__(self, files, output_name):
+    def __init__(self, files, output_name, password=None):
         super().__init__()
         self.files = files
         self.output_name = output_name
+        self.password = password
 
     def run(self):
         try:
             output_file = f"{self.output_name}.7z"
             result = compress_and_upload(
                 self.files,
+                password=self.password,
                 output_name=self.output_name,
                 progress_callback=self.progress.emit
             )

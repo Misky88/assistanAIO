@@ -379,15 +379,18 @@ class BackupApp(QWidget):
         self.file_list.addItems([os.path.basename(f) for f in self.files])
 
     def start_backup(self):
-        if not self.files:
-            QMessageBox.warning(self, "Error", "Selecciona archivos para respaldar.")
-            return
+        password = None
+        if self.encryptCheckBox.isChecked():
+            password = self.passwordField.text()
+            if len(password) < 12:
+                QMessageBox.warning(self, "Contraseña", "La contraseña debe tener al menos 12 caracteres.")
+                return
         name = self.outputNameField.text().strip()
         output_name = name if name else "backup"
         self.progress.setVisible(True)
         self.progress.setValue(0)
         self.backupButton.setEnabled(False)
-        self.thread = BackupThread(self.files, output_name)
+        self.thread = BackupThread(self.files, output_name, password)
         self.thread.progress.connect(self.progress.setValue)
         self.thread.finished.connect(self.backup_finished)
         self.thread.start()

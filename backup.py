@@ -104,10 +104,15 @@ def compress_and_upload(
         encrypted_parts = []
         for part in parts:
             encrypted_file = part + ".aes"
+            print(f"Cifrando {part} -> {encrypted_file}")
             encrypt_file_with_aes(part, encrypted_file)
-            encrypted_parts.append(encrypted_file)
-            os.remove(part)
+            if not os.path.exists(encrypted_file):
+                print(f"Error: No se creó el archivo cifrado {encrypted_file}")
+            else:
+                encrypted_parts.append(encrypted_file)
+                os.remove(part)
         parts = encrypted_parts
+        print(f"Archivos cifrados para subir: {parts}")
 
     # 5. Subir a B2 y borrar de cache
     for idx, part in enumerate(parts):
@@ -116,7 +121,7 @@ def compress_and_upload(
         print(f"{part} subido correctamente.")
         if progress_callback:
             progress_callback(int((idx + 1) / len(parts) * 100))
-        os.remove(part)  # Borra el archivo de cache
+        os.remove(part)
 
     return f"Backup completado exitosamente: {output_name} {'(' + str(len(parts)) + ' partes)' if len(parts)>1 else ''}"
 
