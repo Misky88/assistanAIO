@@ -28,8 +28,10 @@ def get_pc_brand():
         for system in c.Win32_ComputerSystem():
             manufacturer = system.Manufacturer.strip().lower()
             model = system.Model.strip().lower()
+            print(f"[WMI] Manufacturer: {manufacturer}, Model: {model}")
             return manufacturer, model
-    except Exception:
+    except Exception as e:
+        print(f"[WMI ERROR] {e}")
         uname = platform.uname()
         return uname.system.lower(), uname.node.lower()
 
@@ -497,19 +499,28 @@ class SystemInfoApp(QMainWindow):
         logo_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         logo_path = None
         manufacturer = self.system_data['manufacturer'].lower()
+        print(f"Fabricante detectado: {manufacturer}")
 
-        if "lenovo" in manufacturer:
-            logo_path = os.path.join(os.path.dirname(__file__), "images", "Branding_lenovo-logo_lenovologoposred_low_res.png")
-        elif "asus" in manufacturer:
-            logo_path = os.path.join(os.path.dirname(__file__), "images", "ASUS_Corporate_Logo.png")
-        elif "hp" in manufacturer:
-            logo_path = os.path.join(os.path.dirname(__file__), "images", "HP_logo_2008.png")
-        # Añade más marcas si quieres...
+        # Diccionario de marcas y nombres de archivo
+        brand_logos = {
+            "lenovo": "lenovo.png",
+            "asus": "ASUS.png",
+            "hp": "HP.png"
+            # Añade aquí más marcas si tienes más logos
+        }
+
+        for brand, filename in brand_logos.items():
+            if brand in manufacturer:
+                logo_path = os.path.join(os.path.dirname(__file__), "images", filename)
+                print(f"Logo seleccionado: {logo_path}")
+                break
 
         if logo_path and os.path.exists(logo_path):
+            print("Logo encontrado y cargado.")
             pixmap = QPixmap(logo_path)
             logo_label.setPixmap(pixmap.scaled(180, 70, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
         else:
+            print("No se encontró el logo, se muestra emoji.")
             logo_label.setText("🖥️")
             logo_label.setStyleSheet("font-size: 48px;")
 
