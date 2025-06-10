@@ -16,3 +16,5 @@
 2025-06-04 17:32:50,398 - INFO - Error: No se seleccionó carpeta de destino.
 2025-06-04 17:32:53,057 - INFO - Error: No se seleccionó carpeta de destino.
 2025-06-04 17:33:37,669 - INFO - Error: Contraseña demasiado corta.
+2025-06-10 11:06:11,770 - INFO - Pausing thread for 1 seconds because that is what the default exponential backoff is
+2025-06-10 11:06:33,836 - INFO - Pausing thread for 1 seconds because that is what the default exponential backoff is

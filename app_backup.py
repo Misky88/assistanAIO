@@ -382,7 +382,8 @@ class BackupApp(QWidget):
         if not self.files:
             QMessageBox.warning(self, "Error", "Selecciona archivos para respaldar.")
             return
-        output_name = "backup"
+        name = self.outputNameField.text().strip()
+        output_name = name if name else "backup"
         self.progress.setVisible(True)
         self.progress.setValue(0)
         self.backupButton.setEnabled(False)

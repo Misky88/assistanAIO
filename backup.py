@@ -22,7 +22,7 @@ def compress_files(
             'w',
             password=password if password else None,
             filters=[{"id": py7zr.FILTER_LZMA2}],
-         #   encrypt_header=encrypt_filenames  # <-- AÑADE ESTO
+        #    encrypt_header=encrypt_filenames  # <-- AÑADE ESTO si quieres cifrar nombres
         ) as z:
             for file_path in files:
                 if os.path.isdir(file_path):
@@ -73,7 +73,7 @@ def upload_to_backblaze(file_path: str, immutable=False, immutability_duration=N
 def compress_and_upload(
     files,
     password=None,
-    output_name="backup",
+    output_name="",
     part_size=None,
     encrypt_filenames=False,
     immutable=False,
@@ -134,26 +134,3 @@ def encrypt_file_with_aes(input_file: str, output_file: str, key: bytes = None):
 def descomprimir_archivo(ruta_7z, carpeta_destino, password):
     with py7zr.SevenZipFile(ruta_7z, 'r', password=password) as z:
         z.extractall(carpeta_destino)
-
-def compress_and_upload(files, output_name, progress_callback=None):
-    # 1. Comprimir archivos en un zip temporal
-    temp_dir = tempfile.mkdtemp()
-    zip_path = os.path.join(temp_dir, f"{output_name}.zip")
-    shutil.make_archive(base_name=zip_path[:-4], format='zip', root_dir=os.path.dirname(files[0]), base_dir=os.path.basename(files[0]))
-    # 2. Subir a B2 con progreso
-    info = InMemoryAccountInfo()
-    b2_api = B2Api(info)
-    b2_api.authorize_account("production", B2_APP_KEY_ID, B2_APP_KEY)
-    bucket = b2_api.get_bucket_by_name(B2_BUCKET_NAME)
-    file_size = os.path.getsize(zip_path)
-    uploaded = 0
-    def callback(bytes_read):
-        percent = int((bytes_read / file_size) * 100)
-        if progress_callback:
-            progress_callback(percent)
-    with open(zip_path, "rb") as f:
-        data = f.read()
-        bucket.upload_bytes(data, os.path.basename(zip_path))
-        callback(file_size)
-    shutil.rmtree(temp_dir)
-    return f"Backup subido a B2 como {os.path.basename(zip_path)}"
