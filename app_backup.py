@@ -27,9 +27,7 @@ class BackupApp(QWidget):
     def __init__(self):
         super().__init__()
         self.files = []
-        self.destination = ""  # Inicializar destination
         self.setup_ui()
-        self.setup_styles()
         self.thread = None
 
     def setup_ui(self):
@@ -382,87 +380,24 @@ class BackupApp(QWidget):
 
     def start_backup(self):
         if not self.files:
-            QMessageBox.warning(self, "Error", "Debe seleccionar archivos para respaldar.")
-            self.log_activity("Error: No se seleccionaron archivos para respaldar.")
+            QMessageBox.warning(self, "Error", "Selecciona archivos para respaldar.")
             return
-
-        # if not self.destination:
-        #     QMessageBox.warning(self, "Error", "Debe seleccionar una carpeta de destino.")
-        #     self.log_activity("Error: No se seleccionó carpeta de destino.")
-        #     return
-
-        password = self.passwordField.text() if self.encryptCheckBox.isChecked() else None
-        if password and len(password) < 12:
-            QMessageBox.warning(self, "Error", "La contraseña debe tener al menos 12 caracteres.")
-            self.log_activity("Error: Contraseña demasiado corta.")
-            return
-
-        # Obtener el nombre del archivo comprimido
-        output_name = self.outputNameField.text().strip()
-        if not output_name:
-            QMessageBox.warning(self, "Error", "Debe especificar un nombre para el archivo comprimido.")
-            self.log_activity("Error: No se especificó un nombre para el archivo comprimido.")
-            return
-
-        # Obtener configuraciones
-        part_size = self.partSizeCombo.currentText()
-        part_size_bytes = None
-        if part_size != "Sin dividir":
-            part_size_bytes = int(part_size.split("M")[0]) * 1024 * 1024
-
-        # Configuración de inmutabilidad
-        immutable = self.immutableBackupCheckBox.isChecked()
-        immutability_duration = None
-        immutability_days = 0
-        if immutable:
-            time_unit = self.immutabilityTimeUnitCombo.currentText()
-            time_value = int(self.immutabilityTimeValueCombo.currentText())
-            immutability_duration = f"{time_value} {time_unit}"
-            # Convertir a días para BackupThread
-            if time_unit == "Días":
-                immutability_days = time_value
-            elif time_unit == "Semanas":
-                immutability_days = time_value * 7
-            elif time_unit == "Meses":
-                immutability_days = time_value * 30
-            elif time_unit == "Años":
-                immutability_days = time_value * 365
-
-        # Configurar thread de backup
+        output_name = "backup"
         self.progress.setVisible(True)
+        self.progress.setValue(0)
         self.backupButton.setEnabled(False)
-        
-        self.thread = BackupThread(
-            files=self.files,
-            destination=self.destination,
-            output_name=output_name,
-            part_size=part_size_bytes,
-            password=password,
-            encrypt_filenames=self.metadataEncryptionCheckBox.isChecked(),
-            immutable=immutable,
-            immutability_days=immutability_days,
-            encryption_algorithm=self.encryptionAlgorithmCombo.currentText()
-        )
-        
-        self.thread.progress.connect(self.update_progress)
+        self.thread = BackupThread(self.files, output_name)
+        self.thread.progress.connect(self.progress.setValue)
         self.thread.finished.connect(self.backup_finished)
         self.thread.start()
-
-        self.log_activity(f"Inicio de backup: {output_name} (Inmutable: {immutability_duration if immutable else 'No'})")
-
-    def update_progress(self, value):
-        self.progress.setValue(value)
 
     def backup_finished(self, success, message):
         self.progress.setVisible(False)
         self.backupButton.setEnabled(True)
-        
         if success:
             QMessageBox.information(self, "Éxito", message)
-            self.log_activity(f"Backup completado exitosamente: {message}")
         else:
             QMessageBox.critical(self, "Error", message)
-            self.log_activity(f"Error en backup: {message}")
 
     def update_preview(self):
         """Actualiza la vista previa del nombre completo del archivo comprimido."""
