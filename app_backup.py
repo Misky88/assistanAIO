@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QIcon
 from backup_thread import BackupThread
+from b2sdk.v2 import InMemoryAccountInfo, B2Api
 
 
 # Configurar logging
@@ -44,6 +45,7 @@ class BackupApp(QWidget):
         self.files = []
         self.setup_ui()
         self.thread = None
+        self.log_click_count = 0  # Contador de clics para el área de registro
 
     def setup_ui(self):
         header = QLabel("💾 Backup B2C")
@@ -224,6 +226,15 @@ class BackupApp(QWidget):
         self.activityLog = QListWidget()
         log_layout.addWidget(QLabel("Registro de actividad:"))
         log_layout.addWidget(self.activityLog)
+
+        # Botón oculto para licencia
+        self.licenseButton = QPushButton("🔑 Registrar licencia")
+        self.licenseButton.setVisible(False)
+        self.licenseButton.clicked.connect(self.mostrar_dialogo_licencia)
+        log_layout.addWidget(self.licenseButton)
+
+        # Contar clics en el área de registro
+        self.activityLog.mousePressEvent = self.contar_clicks_log
 
         log_tab.setLayout(log_layout)
         tab_widget.addTab(log_tab, "Registro de actividad")
@@ -574,6 +585,29 @@ class BackupApp(QWidget):
             self.hacer_backup_y_subir()
         finally:
             wait_dialog.close()
+
+    def upload_and_delete(local_file_path, b2_bucket_name, b2_file_name, key_id, application_key):
+        # Subir archivo a B2
+        info = InMemoryAccountInfo()
+        b2_api = B2Api(info)
+        b2_api.authorize_account("production", key_id, application_key)
+        bucket = b2_api.get_bucket_by_name(b2_bucket_name)
+        with open(local_file_path, "rb") as f:
+            bucket.upload_bytes(f.read(), b2_file_name)
+        print(f"Archivo '{local_file_path}' subido como '{b2_file_name}' al bucket '{b2_bucket_name}'.")
+        # Borrar archivo local solo si la subida fue exitosa
+        os.remove(local_file_path)
+        print(f"Archivo local '{local_file_path}' eliminado tras la subida.")
+
+    def contar_clicks_log(self, event):
+        self.log_click_count += 1
+        if self.log_click_count >= 7:
+            self.licenseButton.setVisible(True)
+        # Llamar al evento original para que siga funcionando la lista
+        QListWidget.mousePressEvent(self.activityLog, event)
+
+    def mostrar_dialogo_licencia(self):
+        QMessageBox.information(self, "Licencia", "Aquí puedes gestionar la licencia y el registro.")
 
 
 if __name__ == "__main__":
