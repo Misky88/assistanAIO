@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QIcon
 from backup_thread import BackupThread
+from b2sdk.v2 import InMemoryAccountInfo, B2Api
 
 
 # Configurar logging
@@ -574,6 +575,19 @@ class BackupApp(QWidget):
             self.hacer_backup_y_subir()
         finally:
             wait_dialog.close()
+
+    def upload_and_delete(local_file_path, b2_bucket_name, b2_file_name, key_id, application_key):
+        # Subir archivo a B2
+        info = InMemoryAccountInfo()
+        b2_api = B2Api(info)
+        b2_api.authorize_account("production", key_id, application_key)
+        bucket = b2_api.get_bucket_by_name(b2_bucket_name)
+        with open(local_file_path, "rb") as f:
+            bucket.upload_bytes(f.read(), b2_file_name)
+        print(f"Archivo '{local_file_path}' subido como '{b2_file_name}' al bucket '{b2_bucket_name}'.")
+        # Borrar archivo local solo si la subida fue exitosa
+        os.remove(local_file_path)
+        print(f"Archivo local '{local_file_path}' eliminado tras la subida.")
 
 
 if __name__ == "__main__":
