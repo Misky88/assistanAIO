@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (
     QFrame, QSizePolicy, QSpacerItem, QComboBox, QDialog,
     QVBoxLayout, QLabel, QPushButton, QTextEdit, QMessageBox, QCheckBox
 )
-from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal, QPoint, QPropertyAnimation, QEasingCurve
 from PyQt6.QtGui import QFont, QGuiApplication
 from PyQt6.QtWidgets import QProgressBar
 
@@ -182,27 +182,66 @@ class PackageApp(QWidget):
         
 
     def show_toast(self, message, duration=3000):
-        """Muestra una notificación tipo toast en la parte inferior derecha"""
         toast = QLabel(message, self)
         toast.setStyleSheet("""
             QLabel {
                 background-color: #2ecc71;
                 color: white;
-                padding: 10px 20px;
-                border-radius: 8px;
-                font-size: 14px;
+                padding: 12px 24px;
+                border-radius: 10px;
+                font-size: 15px;
                 font-weight: bold;
             }
         """)
         toast.setAlignment(Qt.AlignmentFlag.AlignCenter)
         toast.adjustSize()
 
-        x = self.width() - toast.width() - 400
-        y = self.height() - toast.height() - 40
-        toast.move(x, y)
+        final_x = self.width() - toast.width() - 30
+        final_y = self.height() - toast.height() - 30
+        start_y = final_y + 50
+
+        toast.move(final_x, start_y)
+        toast.setWindowOpacity(0.0)
         toast.show()
 
-        QTimer.singleShot(duration, toast.deleteLater)
+        anim_move_in = QPropertyAnimation(toast, b"pos")
+        anim_move_in.setDuration(500)
+        anim_move_in.setStartValue(QPoint(final_x, start_y))
+        anim_move_in.setEndValue(QPoint(final_x, final_y))
+        anim_move_in.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+        anim_opacity_in = QPropertyAnimation(toast, b"windowOpacity")
+        anim_opacity_in.setDuration(500)
+        anim_opacity_in.setStartValue(0.0)
+        anim_opacity_in.setEndValue(1.0)
+
+        anim_move_in.start()
+        anim_opacity_in.start()
+
+        def start_fade_out():
+            anim_move_out = QPropertyAnimation(toast, b"pos")
+            anim_move_out.setDuration(500)
+            anim_move_out.setStartValue(QPoint(final_x, final_y))
+            anim_move_out.setEndValue(QPoint(final_x, start_y))
+            anim_move_out.setEasingCurve(QEasingCurve.Type.InCubic)
+
+            anim_opacity_out = QPropertyAnimation(toast, b"windowOpacity")
+            anim_opacity_out.setDuration(500)
+            anim_opacity_out.setStartValue(1.0)
+            anim_opacity_out.setEndValue(0.0)
+
+            def cleanup():
+                toast.deleteLater()
+
+            anim_opacity_out.finished.connect(cleanup)
+            anim_move_out.start()
+            anim_opacity_out.start()
+
+            self.toast_anim_out = (anim_move_out, anim_opacity_out)
+
+        QTimer.singleShot(duration, start_fade_out)
+
+        self.toast_anim_in = (anim_move_in, anim_opacity_in)
 
 
     def create_home_tab(self):
@@ -903,7 +942,7 @@ class PackageApp(QWidget):
                 if match:
                     app_name = match.group(1).strip()
                     app_id = match.group(2).strip()
-                    if app_name.lower() == "nombre":
+                    if app_name.lower() in ["name", "nombre"] or app_id.lower() in ["id"]:
                         continue
 
                     item = QListWidgetItem(app_name)
