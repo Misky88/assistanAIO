@@ -17,6 +17,7 @@ COMMANDS = {
     "CONTROL": "Panel de control",
     "MSCONFIG": "Configuración del sistema",
     "CMD": "CMD",
+    "POWERSHELL": "PowerShell"
     "DISKPART": "Administración de discos",
     "TASKMGR": "Administrador de tareas",
     "REGEDIT": "Editor del registro",
