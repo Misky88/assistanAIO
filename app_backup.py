@@ -376,12 +376,6 @@ class BackupApp(QWidget):
             }
         """)
 
-    # def select_destination(self):
-    #     """Permite al usuario seleccionar la carpeta de destino."""
-    #     folder = QFileDialog.getExistingDirectory(self, "Seleccionar Carpeta de Destino")
-    #     if folder:
-    #         self.destination = folder
-    #         self.destinationField.setText(folder)
 
     def select_files(self):
         """Permite al usuario seleccionar archivos para la copia de seguridad."""

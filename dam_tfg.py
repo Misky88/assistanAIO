@@ -257,62 +257,62 @@ class SystemInfoApp(QMainWindow):
         title.setStyleSheet("color: #2c3e50; margin-bottom: 30px;")
         layout.addWidget(title)
 
-        # Correo electrónico
-        email_label = QLabel("Correo Electrónico:")
-        email_label.setStyleSheet("font-weight: bold; color: #34495e;")
-        self.email_input = QLineEdit()
-        self.email_input.setPlaceholderText("Introduce tu correo electrónico")
-        self.email_input.setMinimumHeight(32)
-        layout.addWidget(email_label)
-        layout.addWidget(self.email_input)
+        # # Correo electrónico
+        # email_label = QLabel("Correo Electrónico:")
+        # email_label.setStyleSheet("font-weight: bold; color: #34495e;")
+        # self.email_input = QLineEdit()
+        # self.email_input.setPlaceholderText("Introduce tu correo electrónico")
+        # self.email_input.setMinimumHeight(32)
+        # layout.addWidget(email_label)
+        # layout.addWidget(self.email_input)
 
-        # Nombre completo
-        name_label = QLabel("Nombre completo:")
-        name_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
-        self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("Introduce tu nombre completo")
-        self.name_input.setMinimumHeight(32)
-        layout.addWidget(name_label)
-        layout.addWidget(self.name_input)
+        # # Nombre completo
+        # name_label = QLabel("Nombre completo:")
+        # name_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        # self.name_input = QLineEdit()
+        # self.name_input.setPlaceholderText("Introduce tu nombre completo")
+        # self.name_input.setMinimumHeight(32)
+        # layout.addWidget(name_label)
+        # layout.addWidget(self.name_input)
 
-        # Teléfono
-        phone_label = QLabel("Teléfono:")
-        phone_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
-        self.phone_input = QLineEdit()
-        self.phone_input.setPlaceholderText("Introduce tu teléfono")
-        self.phone_input.setMinimumHeight(32)
-        layout.addWidget(phone_label)
-        layout.addWidget(self.phone_input)
+        # # Teléfono
+        # phone_label = QLabel("Teléfono:")
+        # phone_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        # self.phone_input = QLineEdit()
+        # self.phone_input.setPlaceholderText("Introduce tu teléfono")
+        # self.phone_input.setMinimumHeight(32)
+        # layout.addWidget(phone_label)
+        # layout.addWidget(self.phone_input)
 
-        # Cargo/Puesto
-        position_label = QLabel("Cargo/Puesto:")
-        position_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
-        self.position_input = QLineEdit()
-        self.position_input.setPlaceholderText("Introduce tu cargo o puesto")
-        self.position_input.setMinimumHeight(32)
-        layout.addWidget(position_label)
-        layout.addWidget(self.position_input)
+        # # Cargo/Puesto
+        # position_label = QLabel("Cargo/Puesto:")
+        # position_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        # self.position_input = QLineEdit()
+        # self.position_input.setPlaceholderText("Introduce tu cargo o puesto")
+        # self.position_input.setMinimumHeight(32)
+        # layout.addWidget(position_label)
+        # layout.addWidget(self.position_input)
 
-        # Ubicación
-        location_label = QLabel("Ubicación (Ciudad, Provincia):")
-        location_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
-        self.location_input = QLineEdit()
-        self.location_input.setPlaceholderText("Introduce ciudad y provincia")
-        self.location_input.setMinimumHeight(32)
-        layout.addWidget(location_label)
-        layout.addWidget(self.location_input)
+        # # Ubicación
+        # location_label = QLabel("Ubicación (Ciudad, Provincia):")
+        # location_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        # self.location_input = QLineEdit()
+        # self.location_input.setPlaceholderText("Introduce ciudad y provincia")
+        # self.location_input.setMinimumHeight(32)
+        # layout.addWidget(location_label)
+        # layout.addWidget(self.location_input)
 
-        # Descripción
-        descripcion_label = QLabel("Descripción:")
-        descripcion_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
-        from PyQt6.QtWidgets import QTextEdit
-        self.descripcion_input = QTextEdit()
-        self.descripcion_input.setPlaceholderText("Introduce una descripción")
-        self.descripcion_input.setMinimumHeight(80)
-        layout.addWidget(descripcion_label)
-        layout.addWidget(self.descripcion_input)
+        # # Descripción
+        # descripcion_label = QLabel("Descripción:")
+        # descripcion_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        # from PyQt6.QtWidgets import QTextEdit
+        # self.descripcion_input = QTextEdit()
+        # self.descripcion_input.setPlaceholderText("Introduce una descripción")
+        # self.descripcion_input.setMinimumHeight(80)
+        # layout.addWidget(descripcion_label)
+        # layout.addWidget(self.descripcion_input)
 
-        # --- CAMPOS OCULTOS Y BOTONES (igual que antes) ---
+    
         # Nombre del equipo
         self.hostname_label = QLabel("Nombre del equipo:")
         self.hostname_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
@@ -391,23 +391,23 @@ class SystemInfoApp(QMainWindow):
         self.button_layout.addWidget(self.btn_register)
 
         # Botón Enviar Formulario
-        self.btn_send_form = QPushButton("Enviar Formulario")
-        self.btn_send_form.setStyleSheet("""
-            QPushButton {
-                background-color: #8e44ad;
-                color: white;
-                padding: 10px;
-                border-radius: 5px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #9b59b6;
-            }
-        """)
-        self.btn_send_form.clicked.connect(self.send_form)
-        self.button_layout.addWidget(self.btn_send_form)
+        # self.btn_send_form = QPushButton("Enviar Formulario")
+        # self.btn_send_form.setStyleSheet("""
+        #     QPushButton {
+        #         background-color: #8e44ad;
+        #         color: white;
+        #         padding: 10px;
+        #         border-radius: 5px;
+        #         font-weight: bold;
+        #     }
+        #     QPushButton:hover {
+        #         background-color: #9b59b6;
+        #     }
+        # """)
+        # self.btn_send_form.clicked.connect(self.send_form)
+        # self.button_layout.addWidget(self.btn_send_form)
 
-        layout.addLayout(self.button_layout)
+        # layout.addLayout(self.button_layout)
 
         # Ocultar campos y botones al inicio
         self.hostname_label.setVisible(False)
