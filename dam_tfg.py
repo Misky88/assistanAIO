@@ -259,27 +259,22 @@ class SystemInfoApp(QMainWindow):
         title.setStyleSheet("color: #2c3e50; margin-bottom: 30px;")
         layout.addWidget(title)
 
-    
-
         # Email
-        self.license_label = QLabel("Email:")
-        self.license_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
-        self.license_input = QLineEdit()
-        # self.license_input.setReadOnly(False)
-        self.license_input.setMinimumHeight(32)
-        layout.addWidget(self.license_label)
-        layout.addWidget(self.license_input)
-        
+        self.email_label = QLabel("Email:")
+        self.email_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        self.email_input = QLineEdit()
+        self.email_input.setMinimumHeight(32)
+        layout.addWidget(self.email_label)
+        layout.addWidget(self.email_input)
+
         # Contraseña
-        self.license_label = QLabel("Contraseña:")
-        self.license_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
-        self.license_input = QLineEdit()
-        # self.license_input.setReadOnly(True)
-        self.license_input.setMinimumHeight(32)
-        layout.addWidget(self.license_label)
-        layout.addWidget(self.license_input)
-   
-    
+        self.password_label = QLabel("Contraseña:")
+        self.password_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        self.password_input = QLineEdit()
+        self.password_input.setMinimumHeight(32)
+        layout.addWidget(self.password_label)
+        layout.addWidget(self.password_input)
+
         # Nombre del equipo
         self.hostname_label = QLabel("Nombre del equipo:")
         self.hostname_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
@@ -323,12 +318,9 @@ class SystemInfoApp(QMainWindow):
         layout.addWidget(self.license_label)
         layout.addWidget(self.license_input)
 
-        
-
-
-
         # Botones
         self.button_layout = QHBoxLayout()
+
         self.btn_generate_license = QPushButton("Generar Licencia")
         self.btn_generate_license.setStyleSheet("""
             QPushButton {
@@ -345,8 +337,8 @@ class SystemInfoApp(QMainWindow):
         self.btn_generate_license.clicked.connect(self.generate_license)
         self.button_layout.addWidget(self.btn_generate_license)
 
-        self.btn_register = QPushButton("Registrar")
-        self.btn_register.setStyleSheet("""
+        self.btn_register_form = QPushButton("Registrar")
+        self.btn_register_form.setStyleSheet("""
             QPushButton {
                 background-color: #27ae60;
                 color: white;
@@ -355,29 +347,20 @@ class SystemInfoApp(QMainWindow):
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #2ecc71;
+                background-color: #37D278;
             }
         """)
-        self.btn_register.clicked.connect(self.register_user)
-        self.button_layout.addWidget(self.btn_register)
+        self.btn_register_form.clicked.connect(self.register_user)
+        self.button_layout.addWidget(self.btn_register_form)
 
         layout.addLayout(self.button_layout)
-
-        # Ocultar campos y botones al inicio
-        self.hostname_label.setVisible(True)
-        self.hostname_input.setVisible(True)
-        self.ip_label.setVisible(True)
-        self.ip_input.setVisible(True)
-        self.license_label.setVisible(True)
-        self.license_input.setVisible(True)
-        self.btn_generate_license.setVisible(True)
-        self.btn_register.setVisible(True)
 
         layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
         self.register_page.mousePressEvent = self.handle_register_click
 
+
     def handle_register_click(self, event):
-            # Mostrar los campos y botones oculto
+        
             self.hostname_label.setVisible(True)
             self.hostname_input.setVisible(True)
             self.ip_label.setVisible(True)
@@ -814,49 +797,47 @@ class SystemInfoApp(QMainWindow):
         license_code = self.license_input.text()
         hostname = self.hostname_input.text()
         ip_local = self.ip_input.text()
-        # Aquí puedes usar estas variables como necesites
+        QMessageBox.information(self, "Registrar", "El botón Registrar fue presionado.")
 
-        QMessageBox.information(self, "Registro", f"Usuario registrado.\nEquipo: {hostname}\nIP: {ip_local}")
+#     def send_form(self):
+#         import re
+#         from email.mime.text import MIMEText
+#         email = self.email_input.text().strip()
+#         nombre = self.name_input.text().strip()
+#         telefono = self.phone_input.text().strip()
+#         puesto = self.position_input.text().strip()
+#         ubicacion = self.location_input.text().strip()
+#         descripcion = self.descripcion_input.toPlainText().strip()
 
-    def send_form(self):
-        import re
-        from email.mime.text import MIMEText
-        email = self.email_input.text().strip()
-        nombre = self.name_input.text().strip()
-        telefono = self.phone_input.text().strip()
-        puesto = self.position_input.text().strip()
-        ubicacion = self.location_input.text().strip()
-        descripcion = self.descripcion_input.toPlainText().strip()
+#         # Validación de email
+#         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+#             QMessageBox.warning(self, "Error", "Introduce un correo electrónico válido.")
+#             return
 
-        # Validación de email
-        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-            QMessageBox.warning(self, "Error", "Introduce un correo electrónico válido.")
-            return
+#         # --- ENVÍO DE CORREO ---
+#         remitente = "TU_CORREO@gmail.com"
+#         password = "TU_CONTRASEÑA"
+#         destinatario = "DESTINO@correo.com"
 
-        # --- ENVÍO DE CORREO ---
-        remitente = "TU_CORREO@gmail.com"
-        password = "TU_CONTRASEÑA"
-        destinatario = "DESTINO@correo.com"
+#         cuerpo = f"""Email: {email}
+# Nombre: {nombre}
+# Teléfono: {telefono}
+# Cargo/Puesto: {puesto}
+# Ubicación: {ubicacion}
+# Descripción: {descripcion}
+# """
+#         msg = MIMEText(cuerpo)
+#         msg['Subject'] = "Nuevo registro Assistant AIO"
+#         msg['From'] = remitente
+#         msg['To'] = destinatario
 
-        cuerpo = f"""Email: {email}
-Nombre: {nombre}
-Teléfono: {telefono}
-Cargo/Puesto: {puesto}
-Ubicación: {ubicacion}
-Descripción: {descripcion}
-"""
-        msg = MIMEText(cuerpo)
-        msg['Subject'] = "Nuevo registro Assistant AIO"
-        msg['From'] = remitente
-        msg['To'] = destinatario
-
-        try:
-            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-                server.login(remitente, password)
-                server.sendmail(remitente, destinatario, msg.as_string())
-            QMessageBox.information(self, "Formulario enviado", "¡Correo enviado correctamente!")
-        except Exception as e:
-            QMessageBox.warning(self, "Error", f"No se pudo enviar el correo: {e}")
+#         try:
+#             with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+#                 server.login(remitente, password)
+#                 server.sendmail(remitente, destinatario, msg.as_string())
+#             QMessageBox.information(self, "Formulario enviado", "¡Correo enviado correctamente!")
+#         except Exception as e:
+#             QMessageBox.warning(self, "Error", f"No se pudo enviar el correo: {e}")
 
     def ocultar_campos_registro(self):
         # Oculta los campos de registro principales
@@ -945,6 +926,74 @@ Descripción: {descripcion}
                 QMessageBox.information(self, "Éxito", "Información enviada correctamente.")
             else:
                 QMessageBox.warning(self, "Error", f"Error al enviar la información: {respuesta.text}")
+        except Exception as e:
+            # Mostrar el error en una alerta
+            QMessageBox.critical(self, "Error", f"Error de conexión: {e}")
+
+    def actualizar_espacio_usado(self, licencia, espacio_usado):
+        # URL de la API
+        url = "http://assistantaio.dyndns.org:7070/apex/aio/api/equipos/actualizar"
+
+        # Credenciales de Basic Auth
+        usuario = "WSAIO"
+        contraseña = "WSAIO"
+
+        # Cabeceras requeridas
+        headers = {
+            "licencia": licencia,
+            "usado": str(espacio_usado)  # Convertir el espacio usado a string
+        }
+
+        try:
+            # Realizar la petición PUT con Basic Auth y las cabeceras
+            respuesta = requests.put(url, headers=headers, auth=HTTPBasicAuth(usuario, contraseña))
+
+            # Verificar la respuesta
+            if respuesta.status_code == 200:
+                QMessageBox.information(self, "Éxito", "Espacio usado actualizado correctamente.")
+            else:
+                QMessageBox.warning(self, "Error", f"Error al actualizar el espacio usado: {respuesta.text}")
+        except Exception as e:
+            # Mostrar el error en una alerta
+            QMessageBox.critical(self, "Error", f"Error de conexión: {e}")
+
+    def actualizar_equipo(self):
+        # Verificar que la licencia haya sido generada
+        if not self.licencia_generada:
+            QMessageBox.warning(self, "Error", "Por favor, genera una licencia antes de registrar el equipo.")
+            return
+
+        # URL de la API
+        url = "http://assistantaio.dyndns.org:7070/apex/aio/api/equipos/actualizar"
+
+        # Credenciales de Basic Auth
+        usuario = "WSAIO"
+        contraseña = "WSAIO"
+
+        # Cabeceras requeridas
+        headers = {
+            "licencia": self.licencia_generada,  # Usar la licencia generada
+            "usado": "40",  # Espacio usado en GB
+            "estado": "CORRECTO",  # Estado del equipo
+            "nombre": "Nombre del equipo",  # Reemplaza con el nombre del equipo
+            "ip": "127.10.10.10",  # Reemplaza con la IP del equipo
+            "ubicacion": "Oficina",  # Reemplaza con la ubicación del equipo
+            "capacidad": "200",  # Capacidad total en GB
+            "activo": "true"  # Estado activo del equipo
+        }
+
+        try:
+            # Mensaje para verificar que se está intentando la conexión
+            QMessageBox.information(self, "Depuración", "Conectando con la API...")
+
+            # Realizar la petición PUT con Basic Auth y las cabeceras
+            respuesta = requests.put(url, headers=headers, auth=HTTPBasicAuth(usuario, contraseña))
+
+            # Verificar la respuesta
+            if respuesta.status_code == 200:
+                QMessageBox.information(self, "Éxito", "Equipo actualizado correctamente.")
+            else:
+                QMessageBox.warning(self, "Error", f"Error al actualizar el equipo: {respuesta.text}")
         except Exception as e:
             # Mostrar el error en una alerta
             QMessageBox.critical(self, "Error", f"Error de conexión: {e}")
