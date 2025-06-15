@@ -951,24 +951,37 @@ Descripción: {descripcion}
 
 if __name__ == "__main__":
     if not ctypes.windll.shell32.IsUserAnAdmin():
-        # Relaunch the script with admin rights y usando el Python del venv
+        # Relaunch the script with admin rights
         import sys
         import os
         params = " ".join([f'"{x}"' for x in sys.argv])
-        python_exe = sys.executable  # Esto apunta al Python del venv
         ctypes.windll.shell32.ShellExecuteW(
-            None, "runas", python_exe, f'"{__file__}" {params}', None, 1
+            None, "runas", sys.executable, f'"{__file__}" {params}', None, 1
         )
         sys.exit()
+        
+        # ---- CODIGO PARA OCULTAR LA CONSOLA CUANDO SE EJECUTA EL PROGRAMA COMO ADMINISTRADOR ----
+        # import subprocess
+        # import sys
+        # import os
+        # params = " ".join([f'"{x}"' for x in sys.argv])
+        # executable = sys.executable
+        # script = os.path.abspath(__file__)
+        # subprocess.run(
+        #     ['powershell', '-Command',
+        #      f'Start-Process "{executable}" -ArgumentList \'"{script}" {params}\' -Verb RunAs -WindowStyle Hidden'],
+        #     shell=True
+        # )
+        # sys.exit()
     else:
         app = QApplication(sys.argv)
         app.setStyle("Fusion")
-    
+        
         font = QFont()
         font.setFamily("Segoe UI")
         font.setPointSize(10)
         app.setFont(font)
-    
-    window = SystemInfoApp()
-    window.show()
-    app.exec()
+        
+        window = SystemInfoApp()
+        window.show()
+        app.exec()
