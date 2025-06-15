@@ -845,6 +845,8 @@ class PackageApp(QWidget):
         """Carga la lista de aplicaciones instaladas usando Chocolatey"""
         self.installed_apps.clear()
         self.all_installed = []
+        self.installed_apps_dict = {}
+        choco_lib_path = "C:\\ProgramData\\chocolatey\\lib"
 
         try:
             result = subprocess.run(
@@ -878,7 +880,21 @@ class PackageApp(QWidget):
 
                 if app_name:
                     self.all_installed.append(app_name)
-                    self.installed_apps.addItem(app_name)
+                    item_text = app_name
+                    managed_path = os.path.join(choco_lib_path, app_name.lower())
+                    is_managed = os.path.exists(managed_path)
+
+                    if is_managed:
+                        self.installed_apps_dict[app_name] = app_name
+                    else:
+                        item_text += " (no gestionado por Chocolatey)"
+
+                    item = QListWidgetItem(item_text)
+                    if not is_managed:
+                        item.setForeground(Qt.GlobalColor.darkGray)
+                        item.setFlags(Qt.ItemFlag.NoItemFlags)
+
+                    self.installed_apps.addItem(item)
 
         except Exception as e:
             self.log_text.append(f"Error al listar aplicaciones instaladas en Chocolatey: {e}")
@@ -1892,7 +1908,6 @@ class UninstallSingleThread(QThread):
         self.app_id = app_id
         self.gestor = gestor
         self._cancelar = False
-
     def run(self):
         if self._cancelar:
             self.cancelado.emit("Desinstalación cancelada antes de comenzar.")
