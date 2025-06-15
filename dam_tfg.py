@@ -792,52 +792,45 @@ class SystemInfoApp(QMainWindow):
             QDesktopServices.openUrl(QUrl(url))
 
     def register_user(self):
+        from requests.auth import HTTPBasicAuth
+        import requests
+
         email = self.email_input.text()
         password = self.password_input.text()
         license_code = self.license_input.text()
         hostname = self.hostname_input.text()
         ip_local = self.ip_input.text()
-        QMessageBox.information(self, "Registrar", "El botón Registrar fue presionado.")
 
-#     def send_form(self):
-#         import re
-#         from email.mime.text import MIMEText
-#         email = self.email_input.text().strip()
-#         nombre = self.name_input.text().strip()
-#         telefono = self.phone_input.text().strip()
-#         puesto = self.position_input.text().strip()
-#         ubicacion = self.location_input.text().strip()
-#         descripcion = self.descripcion_input.toPlainText().strip()
+        # URL del endpoint de registro
+        url = "http://assistantaio.dyndns.org:7070/apex/aio/api/equipos/registrar"
 
-#         # Validación de email
-#         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
-#             QMessageBox.warning(self, "Error", "Introduce un correo electrónico válido.")
-#             return
+        # Cabeceras requeridas por ORDS (van como headers)
+        headers = {
+            "licencia": license_code,
+            "nombre": hostname,
+            "ip": ip_local,
+            "ubicacion": "Oficina Principal",
+            "cargo": "Equipo Técnico",
+            "descripcion": "Equipo registrado desde Assistant AIO",
+            "estado": "CORRECTO",
+            "activo": "S",
+            "usado": "0",           # puedes cambiar esto si tienes valor real
+            "capacidad": "100 GB"   # puedes ajustar también
+        }
 
-#         # --- ENVÍO DE CORREO ---
-#         remitente = "TU_CORREO@gmail.com"
-#         password = "TU_CONTRASEÑA"
-#         destinatario = "DESTINO@correo.com"
+        try:
+            # Llamada POST con Basic Auth del cliente
+            response = requests.post(url, headers=headers, auth=HTTPBasicAuth(email, password))
 
-#         cuerpo = f"""Email: {email}
-# Nombre: {nombre}
-# Teléfono: {telefono}
-# Cargo/Puesto: {puesto}
-# Ubicación: {ubicacion}
-# Descripción: {descripcion}
-# """
-#         msg = MIMEText(cuerpo)
-#         msg['Subject'] = "Nuevo registro Assistant AIO"
-#         msg['From'] = remitente
-#         msg['To'] = destinatario
+            if response.status_code == 200:
+                QMessageBox.information(self, "Registro exitoso", "El equipo se registró correctamente.")
+            else:
+                QMessageBox.critical(self, "Error en el registro",
+                                    f"Código: {response.status_code}\nRespuesta:\n{response.text}")
 
-#         try:
-#             with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
-#                 server.login(remitente, password)
-#                 server.sendmail(remitente, destinatario, msg.as_string())
-#             QMessageBox.information(self, "Formulario enviado", "¡Correo enviado correctamente!")
-#         except Exception as e:
-#             QMessageBox.warning(self, "Error", f"No se pudo enviar el correo: {e}")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Excepción al registrar:\n{str(e)}")
+
 
     def ocultar_campos_registro(self):
         # Oculta los campos de registro principales
@@ -958,11 +951,6 @@ class SystemInfoApp(QMainWindow):
             QMessageBox.critical(self, "Error", f"Error de conexión: {e}")
 
     def actualizar_equipo(self):
-        # Verificar que la licencia haya sido generada
-        if not self.licencia_generada:
-            QMessageBox.warning(self, "Error", "Por favor, genera una licencia antes de registrar el equipo.")
-            return
-
         # URL de la API
         url = "http://assistantaio.dyndns.org:7070/apex/aio/api/equipos/actualizar"
 
@@ -972,30 +960,28 @@ class SystemInfoApp(QMainWindow):
 
         # Cabeceras requeridas
         headers = {
-            "licencia": self.licencia_generada,  # Usar la licencia generada
-            "usado": "40",  # Espacio usado en GB
-            "estado": "CORRECTO",  # Estado del equipo
-            "nombre": "Nombre del equipo",  # Reemplaza con el nombre del equipo
-            "ip": "127.10.10.10",  # Reemplaza con la IP del equipo
-            "ubicacion": "Oficina",  # Reemplaza con la ubicación del equipo
-            "capacidad": "200",  # Capacidad total en GB
-            "activo": "true"  # Estado activo del equipo
+            "licencia": self.license_input.text(),
+            "usado": "40",
+            "estado": "CORRECTO",
+            "nombre": self.hostname_input.text(),
+            "ip": self.ip_input.text(),
+            "ubicacion": "Oficina",
+            "capacidad": "200",
+            "activo": "true"
         }
 
+        print("Datos enviados:", headers)  # Depuración
+
         try:
-            # Mensaje para verificar que se está intentando la conexión
-            QMessageBox.information(self, "Depuración", "Conectando con la API...")
-
-            # Realizar la petición PUT con Basic Auth y las cabeceras
             respuesta = requests.put(url, headers=headers, auth=HTTPBasicAuth(usuario, contraseña))
+            print("Estado HTTP:", respuesta.status_code)
+            print("Respuesta del servidor:", respuesta.text)
 
-            # Verificar la respuesta
             if respuesta.status_code == 200:
                 QMessageBox.information(self, "Éxito", "Equipo actualizado correctamente.")
             else:
                 QMessageBox.warning(self, "Error", f"Error al actualizar el equipo: {respuesta.text}")
         except Exception as e:
-            # Mostrar el error en una alerta
             QMessageBox.critical(self, "Error", f"Error de conexión: {e}")
 
 if __name__ == "__main__":
