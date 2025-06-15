@@ -275,43 +275,24 @@ class SystemInfoApp(QMainWindow):
         # layout.addWidget(name_label)
         # layout.addWidget(self.name_input)
 
-        # # Teléfono
-        # phone_label = QLabel("Teléfono:")
-        # phone_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
-        # self.phone_input = QLineEdit()
-        # self.phone_input.setPlaceholderText("Introduce tu teléfono")
-        # self.phone_input.setMinimumHeight(32)
-        # layout.addWidget(phone_label)
-        # layout.addWidget(self.phone_input)
-
-        # # Cargo/Puesto
-        # position_label = QLabel("Cargo/Puesto:")
-        # position_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
-        # self.position_input = QLineEdit()
-        # self.position_input.setPlaceholderText("Introduce tu cargo o puesto")
-        # self.position_input.setMinimumHeight(32)
-        # layout.addWidget(position_label)
-        # layout.addWidget(self.position_input)
-
-        # # Ubicación
-        # location_label = QLabel("Ubicación (Ciudad, Provincia):")
-        # location_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
-        # self.location_input = QLineEdit()
-        # self.location_input.setPlaceholderText("Introduce ciudad y provincia")
-        # self.location_input.setMinimumHeight(32)
-        # layout.addWidget(location_label)
-        # layout.addWidget(self.location_input)
-
-        # # Descripción
-        # descripcion_label = QLabel("Descripción:")
-        # descripcion_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
-        # from PyQt6.QtWidgets import QTextEdit
-        # self.descripcion_input = QTextEdit()
-        # self.descripcion_input.setPlaceholderText("Introduce una descripción")
-        # self.descripcion_input.setMinimumHeight(80)
-        # layout.addWidget(descripcion_label)
-        # layout.addWidget(self.descripcion_input)
-
+        # Email
+        self.license_label = QLabel("Email:")
+        self.license_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        self.license_input = QLineEdit()
+        self.license_input.setReadOnly(True)
+        self.license_input.setMinimumHeight(32)
+        layout.addWidget(self.license_label)
+        layout.addWidget(self.license_input)
+        
+        # Contraseña
+        self.license_label = QLabel("Contraseña:")
+        self.license_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        self.license_input = QLineEdit()
+        self.license_input.setReadOnly(True)
+        self.license_input.setMinimumHeight(32)
+        layout.addWidget(self.license_label)
+        layout.addWidget(self.license_input)
+   
     
         # Nombre del equipo
         self.hostname_label = QLabel("Nombre del equipo:")
@@ -356,6 +337,10 @@ class SystemInfoApp(QMainWindow):
         layout.addWidget(self.license_label)
         layout.addWidget(self.license_input)
 
+        
+
+
+
         # Botones
         self.button_layout = QHBoxLayout()
         self.btn_generate_license = QPushButton("Generar Licencia")
@@ -390,23 +375,6 @@ class SystemInfoApp(QMainWindow):
         self.btn_register.clicked.connect(self.register_user)
         self.button_layout.addWidget(self.btn_register)
 
-        # Botón Enviar Formulario
-        # self.btn_send_form = QPushButton("Enviar Formulario")
-        # self.btn_send_form.setStyleSheet("""
-        #     QPushButton {
-        #         background-color: #8e44ad;
-        #         color: white;
-        #         padding: 10px;
-        #         border-radius: 5px;
-        #         font-weight: bold;
-        #     }
-        #     QPushButton:hover {
-        #         background-color: #9b59b6;
-        #     }
-        # """)
-        # self.btn_send_form.clicked.connect(self.send_form)
-        # self.button_layout.addWidget(self.btn_send_form)
-
         layout.addLayout(self.button_layout)
 
         # Ocultar campos y botones al inicio
@@ -423,8 +391,6 @@ class SystemInfoApp(QMainWindow):
         self.register_page.mousePressEvent = self.handle_register_click
 
     def handle_register_click(self, event):
-        # self.register_click_count += 1
-        # if self.register_click_count >= 7:
             # Mostrar los campos y botones oculto
             self.hostname_label.setVisible(True)
             self.hostname_input.setVisible(True)
@@ -434,10 +400,7 @@ class SystemInfoApp(QMainWindow):
             self.license_input.setVisible(True)
             self.btn_generate_license.setVisible(True)
             self.btn_register.setVisible(True)
-            
-            # self.ocultar_campos_registro()  # Ocultar botón de registro
-        # Llamar al evento original si lo necesitas
-        # QWidget.mousePressEvent(self.register_page, event)
+    
 
     def load_system_info(self):
         try:
