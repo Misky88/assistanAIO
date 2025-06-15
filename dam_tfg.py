@@ -407,7 +407,7 @@ class SystemInfoApp(QMainWindow):
         # self.btn_send_form.clicked.connect(self.send_form)
         # self.button_layout.addWidget(self.btn_send_form)
 
-        # layout.addLayout(self.button_layout)
+        layout.addLayout(self.button_layout)
 
         # Ocultar campos y botones al inicio
         self.hostname_label.setVisible(True)
@@ -423,8 +423,8 @@ class SystemInfoApp(QMainWindow):
         self.register_page.mousePressEvent = self.handle_register_click
 
     def handle_register_click(self, event):
-        self.register_click_count += 1
-        if self.register_click_count >= 7:
+        # self.register_click_count += 1
+        # if self.register_click_count >= 7:
             # Mostrar los campos y botones oculto
             self.hostname_label.setVisible(True)
             self.hostname_input.setVisible(True)
@@ -437,7 +437,7 @@ class SystemInfoApp(QMainWindow):
             
             # self.ocultar_campos_registro()  # Ocultar botón de registro
         # Llamar al evento original si lo necesitas
-        QWidget.mousePressEvent(self.register_page, event)
+        # QWidget.mousePressEvent(self.register_page, event)
 
     def load_system_info(self):
         try:
