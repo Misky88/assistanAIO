@@ -410,14 +410,14 @@ class SystemInfoApp(QMainWindow):
         # layout.addLayout(self.button_layout)
 
         # Ocultar campos y botones al inicio
-        self.hostname_label.setVisible(False)
-        self.hostname_input.setVisible(False)
-        self.ip_label.setVisible(False)
-        self.ip_input.setVisible(False)
-        self.license_label.setVisible(False)
-        self.license_input.setVisible(False)
-        self.btn_generate_license.setVisible(False)
-        self.btn_register.setVisible(False)
+        self.hostname_label.setVisible(True)
+        self.hostname_input.setVisible(True)
+        self.ip_label.setVisible(True)
+        self.ip_input.setVisible(True)
+        self.license_label.setVisible(True)
+        self.license_input.setVisible(True)
+        self.btn_generate_license.setVisible(True)
+        self.btn_register.setVisible(True)
 
         layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
         self.register_page.mousePressEvent = self.handle_register_click
@@ -435,7 +435,7 @@ class SystemInfoApp(QMainWindow):
             self.btn_generate_license.setVisible(True)
             self.btn_register.setVisible(True)
             
-            self.ocultar_campos_registro()  # Ocultar botón de registro
+            # self.ocultar_campos_registro()  # Ocultar botón de registro
         # Llamar al evento original si lo necesitas
         QWidget.mousePressEvent(self.register_page, event)
 
