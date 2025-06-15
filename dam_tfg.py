@@ -6,6 +6,8 @@ import psutil
 import random
 import string
 import smtplib
+import requests
+from requests.auth import HTTPBasicAuth
 from PyQt6.QtCore import QSize, Qt, QTimer
 from datetime import datetime
 from PyQt6.QtWidgets import QScrollArea
@@ -257,29 +259,13 @@ class SystemInfoApp(QMainWindow):
         title.setStyleSheet("color: #2c3e50; margin-bottom: 30px;")
         layout.addWidget(title)
 
-        # # Correo electrónico
-        # email_label = QLabel("Correo Electrónico:")
-        # email_label.setStyleSheet("font-weight: bold; color: #34495e;")
-        # self.email_input = QLineEdit()
-        # self.email_input.setPlaceholderText("Introduce tu correo electrónico")
-        # self.email_input.setMinimumHeight(32)
-        # layout.addWidget(email_label)
-        # layout.addWidget(self.email_input)
-
-        # # Nombre completo
-        # name_label = QLabel("Nombre completo:")
-        # name_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
-        # self.name_input = QLineEdit()
-        # self.name_input.setPlaceholderText("Introduce tu nombre completo")
-        # self.name_input.setMinimumHeight(32)
-        # layout.addWidget(name_label)
-        # layout.addWidget(self.name_input)
+    
 
         # Email
         self.license_label = QLabel("Email:")
         self.license_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
         self.license_input = QLineEdit()
-        self.license_input.setReadOnly(True)
+        # self.license_input.setReadOnly(False)
         self.license_input.setMinimumHeight(32)
         layout.addWidget(self.license_label)
         layout.addWidget(self.license_input)
@@ -288,7 +274,7 @@ class SystemInfoApp(QMainWindow):
         self.license_label = QLabel("Contraseña:")
         self.license_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
         self.license_input = QLineEdit()
-        self.license_input.setReadOnly(True)
+        # self.license_input.setReadOnly(True)
         self.license_input.setMinimumHeight(32)
         layout.addWidget(self.license_label)
         layout.addWidget(self.license_input)
@@ -915,7 +901,53 @@ Descripción: {descripcion}
         self.agradecimiento_label.setVisible(True)
         self.registro_pendiente_label.setVisible(True)
         
+    def registrar_equipo(self):
+        # Mensaje para verificar que el botón fue presionado
+        QMessageBox.information(self, "Depuración", "Intentando realizar la conexión...")
 
+        # Obtener los datos del formulario
+        nombre = self.name_input.text()
+        ip = self.ip_input.text()
+        licencia = self.license_input.text()
+        correo = self.email_input.text()
+        contraseña = self.password_input.text()
+
+        # Validar que todos los campos estén completos
+        if not (nombre and ip and licencia and correo and contraseña):
+            QMessageBox.warning(self, "Error", "Por favor, completa todos los campos.")
+            return
+
+        # URL de la API
+        url = "http://assistantaio.dyndns.org:7070/apex/aio/api/equipos/actualizar"
+
+        # Datos a enviar
+        datos = {
+            "nombre_equipo": nombre,
+            "ip_local": ip,
+            "licencia": licencia,
+            "correo": correo,
+            "contraseña": contraseña
+        }
+
+        # Credenciales de Basic Auth
+        usuario = "WSAIO"  # Reemplaza con tu usuario
+        contraseña_auth = "WSAIO"  # Reemplaza con tu contraseña
+
+        try:
+            # Mensaje para verificar que se está intentando la conexión
+            QMessageBox.information(self, "Depuración", "Conectando con la API...")
+
+            # Realizar la petición PUT con Basic Auth
+            respuesta = requests.put(url, json=datos, auth=HTTPBasicAuth(usuario, contraseña_auth))
+
+            # Verificar la respuesta
+            if respuesta.status_code == 200:
+                QMessageBox.information(self, "Éxito", "Información enviada correctamente.")
+            else:
+                QMessageBox.warning(self, "Error", f"Error al enviar la información: {respuesta.text}")
+        except Exception as e:
+            # Mostrar el error en una alerta
+            QMessageBox.critical(self, "Error", f"Error de conexión: {e}")
 
 if __name__ == "__main__":
     if not ctypes.windll.shell32.IsUserAnAdmin():
