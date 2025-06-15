@@ -1,8 +1,0 @@
-{
-    "rclone_config_path": "C:\\rclone\\rclone.conf",
-    "winfsp_url": "https://winfsp.dev/rel/",
-    "backup_directory": "C:\\Backup",
-    "choco_installation_path": "C:\\ProgramData\\chocolatey\\bin",
-    "default_bucket": "my_default_bucket",
-    "autostart": false
-}

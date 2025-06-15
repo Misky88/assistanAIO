@@ -11,3 +11,10 @@
 2025-05-25 19:16:32,592 - INFO - Inicio de backup: Prueba_1917 (Inmutable: No)
 2025-05-25 19:20:48,354 - INFO - Inicio de backup: Prueba_1920 (Inmutable: No)
 2025-05-25 19:22:36,206 - INFO - Inicio de backup: Prueba_1923 (Inmutable: No)
+2025-06-04 17:18:30,811 - INFO - Error: No se seleccionó carpeta de destino.
+2025-06-04 17:32:24,371 - INFO - Error: No se seleccionó carpeta de destino.
+2025-06-04 17:32:50,398 - INFO - Error: No se seleccionó carpeta de destino.
+2025-06-04 17:32:53,057 - INFO - Error: No se seleccionó carpeta de destino.
+2025-06-04 17:33:37,669 - INFO - Error: Contraseña demasiado corta.
+2025-06-10 11:06:11,770 - INFO - Pausing thread for 1 seconds because that is what the default exponential backoff is
+2025-06-10 11:06:33,836 - INFO - Pausing thread for 1 seconds because that is what the default exponential backoff is

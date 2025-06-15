@@ -17,6 +17,7 @@ COMMANDS = {
     "CONTROL": "Panel de control",
     "MSCONFIG": "Configuración del sistema",
     "CMD": "CMD",
+    "POWERSHELL": "PowerShell"
     "DISKPART": "Administración de discos",
     "TASKMGR": "Administrador de tareas",
     "REGEDIT": "Editor del registro",
@@ -62,7 +63,7 @@ COMMANDS = {
     "SHUTDOWN -I": "Abrir el panel gráfico de apagado remoto",
     "TASKKILL /IM EXPLORER.EXE /F": "Cerrar el explorador de Windows (avanzado)",
     "TASKLIST": "Ver lista de procesos activos",
-    "REGBACK": "Copia de seguridad del registro (comando legacy)",
+    "SDCLT.EXE": "Abrir herramienta de copia de seguridad y restauración",
 }
 
 

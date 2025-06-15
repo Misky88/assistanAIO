@@ -1,23 +1,21 @@
-import sys
+import ctypes
 import os
 import platform
 import sys
 import psutil
 import random
 import string
-import requests
-from PyQt6.QtCore import QSize, Qt, QTimer, QUrl
+import smtplib
+from PyQt6.QtCore import QSize, Qt, QTimer
 from datetime import datetime
 from PyQt6.QtWidgets import QScrollArea
-from PyQt6.QtGui import QIcon, QFont, QDesktopServices, QPixmap
+from PyQt6.QtGui import QIcon, QFont, QPixmap
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, QWidget,
                              QVBoxLayout, QHBoxLayout, QLabel, QFrame, QStackedWidget,
                              QLineEdit, QSpacerItem, QSizePolicy, QMessageBox,
                              QTableWidget, QTableWidgetItem, QAbstractItemView)
 from PyQt6.QtGui import QDesktopServices
 from PyQt6.QtCore import QUrl
-from io import BytesIO
-
 from app_backup import BackupApp
 from chocolatey import PackageApp
 from comandowin import ComandaWin
@@ -31,9 +29,12 @@ def get_pc_brand():
         for system in c.Win32_ComputerSystem():
             manufacturer = system.Manufacturer.strip().lower()
             model = system.Model.strip().lower()
+            print(f"[WMI] Manufacturer: {manufacturer}, Model: {model}")
             return manufacturer, model
-    except Exception:
+    except Exception as e:
+        print(f"[WMI ERROR] {e}")
         uname = platform.uname()
+        print(f"[PLATFORM] system: {uname.system}, node: {uname.node}")
         return uname.system.lower(), uname.node.lower()
 
 class SystemInfoApp(QMainWindow):
@@ -61,7 +62,9 @@ class SystemInfoApp(QMainWindow):
         # Configurar temporizador para actualizar estadísticas en tiempo real
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_realtime_stats)
-        self.timer.start(400)  # Actualizar cada segundo
+        self.timer.start(400)  # Actualizar cada 0.4 segundos
+
+        self.register_click_count = 0  # Contador de clics para la página de registro
 
     def update_realtime_stats(self):
         self.cpu_usage.setText(f"CPU: {psutil.cpu_percent()}%")
@@ -263,26 +266,98 @@ class SystemInfoApp(QMainWindow):
         layout.addWidget(email_label)
         layout.addWidget(self.email_input)
 
-        # Contraseña
-        password_label = QLabel("Contraseña:")
-        password_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
-        self.password_input = QLineEdit()
-        self.password_input.setPlaceholderText("Introduce tu contraseña")
-        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password_input.setMinimumHeight(32)
-        layout.addWidget(password_label)
-        layout.addWidget(self.password_input)
+        # Nombre completo
+        name_label = QLabel("Nombre completo:")
+        name_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("Introduce tu nombre completo")
+        self.name_input.setMinimumHeight(32)
+        layout.addWidget(name_label)
+        layout.addWidget(self.name_input)
+
+        # Teléfono
+        phone_label = QLabel("Teléfono:")
+        phone_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        self.phone_input = QLineEdit()
+        self.phone_input.setPlaceholderText("Introduce tu teléfono")
+        self.phone_input.setMinimumHeight(32)
+        layout.addWidget(phone_label)
+        layout.addWidget(self.phone_input)
+
+        # Cargo/Puesto
+        position_label = QLabel("Cargo/Puesto:")
+        position_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        self.position_input = QLineEdit()
+        self.position_input.setPlaceholderText("Introduce tu cargo o puesto")
+        self.position_input.setMinimumHeight(32)
+        layout.addWidget(position_label)
+        layout.addWidget(self.position_input)
+
+        # Ubicación
+        location_label = QLabel("Ubicación (Ciudad, Provincia):")
+        location_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        self.location_input = QLineEdit()
+        self.location_input.setPlaceholderText("Introduce ciudad y provincia")
+        self.location_input.setMinimumHeight(32)
+        layout.addWidget(location_label)
+        layout.addWidget(self.location_input)
+
+        # Descripción
+        descripcion_label = QLabel("Descripción:")
+        descripcion_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        from PyQt6.QtWidgets import QTextEdit
+        self.descripcion_input = QTextEdit()
+        self.descripcion_input.setPlaceholderText("Introduce una descripción")
+        self.descripcion_input.setMinimumHeight(80)
+        layout.addWidget(descripcion_label)
+        layout.addWidget(self.descripcion_input)
+
+        # --- CAMPOS OCULTOS Y BOTONES (igual que antes) ---
+        # Nombre del equipo
+        self.hostname_label = QLabel("Nombre del equipo:")
+        self.hostname_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        self.hostname_input = QLineEdit()
+        self.hostname_input.setText(platform.node())
+        self.hostname_input.setReadOnly(True)
+        self.hostname_input.setMinimumHeight(32)
+        layout.addWidget(self.hostname_label)
+        layout.addWidget(self.hostname_input)
+
+        # IP local
+        self.ip_label = QLabel("IP Local:")
+        self.ip_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        try:
+            addrs = psutil.net_if_addrs()
+            ip = None
+            for iface, addr_list in addrs.items():
+                for addr in addr_list:
+                    if addr.family == 2 and not addr.address.startswith("169.254"):
+                        ip = addr.address
+                        break
+                if ip:
+                    break
+            if not ip:
+                ip = "No disponible"
+        except Exception:
+            ip = "No disponible"
+        self.ip_input = QLineEdit()
+        self.ip_input.setText(ip)
+        self.ip_input.setReadOnly(True)
+        self.ip_input.setMinimumHeight(32)
+        layout.addWidget(self.ip_label)
+        layout.addWidget(self.ip_input)
 
         # Licencia
-        license_label = QLabel("Licencia:")
-        license_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
+        self.license_label = QLabel("Licencia:")
+        self.license_label.setStyleSheet("font-weight: bold; color: #34495e; margin-top: 10px;")
         self.license_input = QLineEdit()
         self.license_input.setReadOnly(True)
         self.license_input.setMinimumHeight(32)
-        layout.addWidget(license_label)
+        layout.addWidget(self.license_label)
         layout.addWidget(self.license_input)
 
-        # Botón Generar Licencia
+        # Botones
+        self.button_layout = QHBoxLayout()
         self.btn_generate_license = QPushButton("Generar Licencia")
         self.btn_generate_license.setStyleSheet("""
             QPushButton {
@@ -297,10 +372,72 @@ class SystemInfoApp(QMainWindow):
             }
         """)
         self.btn_generate_license.clicked.connect(self.generate_license)
-        layout.addWidget(self.btn_generate_license)
+        self.button_layout.addWidget(self.btn_generate_license)
 
-        # Espaciador
+        self.btn_register = QPushButton("Registrar")
+        self.btn_register.setStyleSheet("""
+            QPushButton {
+                background-color: #27ae60;
+                color: white;
+                padding: 10px;
+                border-radius: 5px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #2ecc71;
+            }
+        """)
+        self.btn_register.clicked.connect(self.register_user)
+        self.button_layout.addWidget(self.btn_register)
+
+        # Botón Enviar Formulario
+        self.btn_send_form = QPushButton("Enviar Formulario")
+        self.btn_send_form.setStyleSheet("""
+            QPushButton {
+                background-color: #8e44ad;
+                color: white;
+                padding: 10px;
+                border-radius: 5px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #9b59b6;
+            }
+        """)
+        self.btn_send_form.clicked.connect(self.send_form)
+        self.button_layout.addWidget(self.btn_send_form)
+
+        layout.addLayout(self.button_layout)
+
+        # Ocultar campos y botones al inicio
+        self.hostname_label.setVisible(False)
+        self.hostname_input.setVisible(False)
+        self.ip_label.setVisible(False)
+        self.ip_input.setVisible(False)
+        self.license_label.setVisible(False)
+        self.license_input.setVisible(False)
+        self.btn_generate_license.setVisible(False)
+        self.btn_register.setVisible(False)
+
         layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+        self.register_page.mousePressEvent = self.handle_register_click
+
+    def handle_register_click(self, event):
+        self.register_click_count += 1
+        if self.register_click_count >= 7:
+            # Mostrar los campos y botones oculto
+            self.hostname_label.setVisible(True)
+            self.hostname_input.setVisible(True)
+            self.ip_label.setVisible(True)
+            self.ip_input.setVisible(True)
+            self.license_label.setVisible(True)
+            self.license_input.setVisible(True)
+            self.btn_generate_license.setVisible(True)
+            self.btn_register.setVisible(True)
+            
+            self.ocultar_campos_registro()  # Ocultar botón de registro
+        # Llamar al evento original si lo necesitas
+        QWidget.mousePressEvent(self.register_page, event)
 
     def load_system_info(self):
         try:
@@ -354,6 +491,8 @@ class SystemInfoApp(QMainWindow):
 
         # Marca para logo/avatar
         manufacturer, _ = get_pc_brand()
+        if manufacturer == "windows":
+            print("ATENCIÓN: No se pudo detectar el fabricante real, se usará 'windows'. Revisa la instalación y activación del entorno virtual.")
         self.system_data = {
             'os': f"{platform.system()} {platform.release()}",
             'hostname': platform.node(),
@@ -391,6 +530,20 @@ class SystemInfoApp(QMainWindow):
             value_label.setStyleSheet("color: #7f8c8d;")
             layout.addWidget(value_label)
         return widget
+
+    def create_section_title(self, text, emoji="🖥️"):
+        title_widget = QWidget()
+        layout = QHBoxLayout(title_widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+
+        icon_label = QLabel(emoji)
+        icon_label.setStyleSheet("font-size: 32px; margin-right: 12px;")
+        text_label = QLabel(text)
+        text_label.setStyleSheet("font-size: 28px; font-weight: bold; color: #2c3e50;")
+        layout.addWidget(icon_label)
+        layout.addWidget(text_label)
+        return title_widget
 
     def show_system_info(self):
     
@@ -430,19 +583,28 @@ class SystemInfoApp(QMainWindow):
         logo_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         logo_path = None
         manufacturer = self.system_data['manufacturer'].lower()
+        print(f"Fabricante detectado: {manufacturer}")
 
-        if "lenovo" in manufacturer:
-            logo_path = os.path.join(os.path.dirname(__file__), "images", "Branding_lenovo-logo_lenovologoposred_low_res.png")
-        elif "asus" in manufacturer:
-            logo_path = os.path.join(os.path.dirname(__file__), "images", "ASUS_Corporate_Logo.png")
-        elif "hp" in manufacturer:
-            logo_path = os.path.join(os.path.dirname(__file__), "images", "HP_logo_2008.png")
-        # Añade más marcas si quieres...
+        # Diccionario de marcas y nombres de archivo
+        brand_logos = {
+            "lenovo": "lenovo.png",
+            "asus": "ASUS.png",
+            "hp": "HP.png"
+            # Añade aquí más marcas si tienes más logos
+        }
+
+        for brand, filename in brand_logos.items():
+            if brand in manufacturer:
+                logo_path = os.path.join(os.path.dirname(__file__), "images", filename)
+                print(f"Logo seleccionado: {logo_path}")
+                break
 
         if logo_path and os.path.exists(logo_path):
+            print("Logo encontrado y cargado.")
             pixmap = QPixmap(logo_path)
-            logo_label.setPixmap(pixmap.scaled(80, 80, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+            logo_label.setPixmap(pixmap.scaled(180, 70, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
         else:
+            print("No se encontró el logo, se muestra emoji.")
             logo_label.setText("🖥️")
             logo_label.setStyleSheet("font-size: 48px;")
 
@@ -696,6 +858,100 @@ class SystemInfoApp(QMainWindow):
         if column == 1:
             url = self.table.item(row, column).text()
             QDesktopServices.openUrl(QUrl(url))
+
+    def register_user(self):
+        email = self.email_input.text()
+        password = self.password_input.text()
+        license_code = self.license_input.text()
+        hostname = self.hostname_input.text()
+        ip_local = self.ip_input.text()
+        # Aquí puedes usar estas variables como necesites
+
+        QMessageBox.information(self, "Registro", f"Usuario registrado.\nEquipo: {hostname}\nIP: {ip_local}")
+
+    def send_form(self):
+        import re
+        from email.mime.text import MIMEText
+        email = self.email_input.text().strip()
+        nombre = self.name_input.text().strip()
+        telefono = self.phone_input.text().strip()
+        puesto = self.position_input.text().strip()
+        ubicacion = self.location_input.text().strip()
+        descripcion = self.descripcion_input.toPlainText().strip()
+
+        # Validación de email
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            QMessageBox.warning(self, "Error", "Introduce un correo electrónico válido.")
+            return
+
+        # --- ENVÍO DE CORREO ---
+        remitente = "TU_CORREO@gmail.com"
+        password = "TU_CONTRASEÑA"
+        destinatario = "DESTINO@correo.com"
+
+        cuerpo = f"""Email: {email}
+Nombre: {nombre}
+Teléfono: {telefono}
+Cargo/Puesto: {puesto}
+Ubicación: {ubicacion}
+Descripción: {descripcion}
+"""
+        msg = MIMEText(cuerpo)
+        msg['Subject'] = "Nuevo registro Assistant AIO"
+        msg['From'] = remitente
+        msg['To'] = destinatario
+
+        try:
+            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+                server.login(remitente, password)
+                server.sendmail(remitente, destinatario, msg.as_string())
+            QMessageBox.information(self, "Formulario enviado", "¡Correo enviado correctamente!")
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"No se pudo enviar el correo: {e}")
+
+    def ocultar_campos_registro(self):
+        # Oculta los campos de registro principales
+        self.email_input.setVisible(False)
+        self.name_input.setVisible(False)
+        self.phone_input.setVisible(False)
+        self.position_input.setVisible(False)
+        self.location_input.setVisible(False)
+        self.descripcion_input.setVisible(False)
+
+        # Oculta las etiquetas asociadas
+        for widget in self.register_page.findChildren(QLabel):
+            if widget.text() in [
+                "Correo Electrónico:",
+                "Nombre completo:",
+                "Teléfono:",
+                "Cargo/Puesto:",
+                "Ubicación (Ciudad, Provincia):",
+                "Descripción:"
+            ]:
+                widget.setVisible(False)
+
+        # Oculta el botón Enviar Formulario
+        self.btn_send_form.setVisible(False)
+
+        # Solo crear los mensajes si no existen ya
+        if not hasattr(self, "agradecimiento_label"):
+            self.agradecimiento_label = QLabel(
+                "Gracias por realizar la solicitud de registro, nos pondremos en contacto con\nusted en la mayor brevedad posible."
+            )
+            self.agradecimiento_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+            self.agradecimiento_label.setStyleSheet("font-size: 22px; color: #222; margin-top: 40px;")
+            self.register_page.layout().addWidget(self.agradecimiento_label)
+
+        if not hasattr(self, "registro_pendiente_label"):
+            self.registro_pendiente_label = QLabel("Registro pendiente")
+            self.registro_pendiente_label.setStyleSheet("color: red; font-weight: bold; font-size: 20px;")
+            self.registro_pendiente_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
+            self.register_page.layout().addWidget(self.registro_pendiente_label)
+
+        # Asegúrate de que estén visibles
+        self.agradecimiento_label.setVisible(True)
+        self.registro_pendiente_label.setVisible(True)
+        
 
 
 if __name__ == "__main__":
